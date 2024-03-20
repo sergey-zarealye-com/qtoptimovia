@@ -88,12 +88,6 @@ class MainWindowUI:
 
         tool_btn_settings.setIcon(QIcon("icons/settings_black_24dp.svg"))
 
-        # Layout
-        # for ui in (WidgetsUI, DockUI, FrameUI, MdiUI, IconsUi):
-        #     container = QWidget()
-        #     ui().setup_ui(container)
-        #     self.stack_widget.addWidget(container)
-
         for stack_idx, stack_widget in enumerate((self.col1_stack_widget, self.col2_stack_widget, self.col3_stack_widget)):
             for ui in (AlbumsUI, FilesUI, ArchiveUI, MontageUI, ExtSearchUI):
                 container = QWidget()
@@ -153,7 +147,7 @@ class MainWindow(QMainWindow):
 
 
 app = QApplication(sys.argv)
-qdarktheme.setup_theme('light')
+qdarktheme.setup_theme('dark')
 w = MainWindow()
 w.show()
 app.exec()

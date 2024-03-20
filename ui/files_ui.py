@@ -15,7 +15,6 @@ class FilesUI:
             model.setNameFilterDisables(False)
             tree = QTreeView()
             tree.setModel(model)
-            print(tree.sizeHint())
             layout.addWidget(tree)
             tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         elif col == 1:
