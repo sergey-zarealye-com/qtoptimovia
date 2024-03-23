@@ -3,15 +3,17 @@ from PySide6.QtWidgets import (
     QMainWindow, QApplication,
     QLabel, QToolBar, QStatusBar,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
-    QSizePolicy, QLineEdit, QSplitter, QStackedWidget)
+    QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox)
 from PySide6.QtGui import QAction, QIcon, QActionGroup
 from PySide6.QtCore import Qt, QSize, Slot
+from PySide6.QtSql import QSqlDatabase
 
 from ui.albums_ui import AlbumsUI
 from ui.files_ui import FilesUI
 from ui.archive_ui import ArchiveUI
 from ui.montage_ui import MontageUI
 from ui.ext_search_ui import ExtSearchUI
+from models.files import FilesModel
 
 import qdarktheme
 
@@ -135,7 +137,8 @@ class MainWindow(QMainWindow):
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
 
-        self.ui.actions_toolbar[0].triggered.connect(self.import_video_files) #Import tool button
+        # Import tool button
+        self.ui.actions_toolbar[0].triggered.connect(self.import_video_files)
 
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
@@ -143,17 +146,20 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def import_video_files(self, e):
-        print(self.video_files_in_directory)
+        ### TODO make slot to import selected files only, not just the full dir
+        FilesModel.import_files(self.video_files_in_directory)
 
     @Slot()
     def show_files_in_dir(self, idx):
         dir_path = self.ui.pages[1].model.get_file_path(idx)
         self.video_files_in_directory = self.ui.pages[1].model.get_video_files(dir_path)
-        self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0) #Import tool button
+        # Import tool button
+        self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
 
     @Slot()
     def collapse_files(self, idx):
-        self.ui.actions_toolbar[0].setEnabled(False) #Import tool button
+        # Import tool button
+        self.ui.actions_toolbar[0].setEnabled(False)
         print('Collapsed', idx)
 
     @Slot()
@@ -174,8 +180,23 @@ class MainWindow(QMainWindow):
         self.ui.col3_stack_widget.setCurrentIndex(index)
 
 
-app = QApplication(sys.argv)
-qdarktheme.setup_theme('dark')
-w = MainWindow()
-w.show()
-app.exec()
+if __name__ == "__main__":
+    # Create the connection
+    con = QSqlDatabase.addDatabase("QSQLITE")
+    con.setDatabaseName("data/optimovia.db")
+
+    app = QApplication(sys.argv)
+    qdarktheme.setup_theme('auto')
+
+    # Try to open the connection and handle possible errors
+    if not con.open():
+        QMessageBox.critical(
+            None,
+            "Optimovia - Error!",
+            "Database Error: %s" % con.lastError().databaseText(),
+        )
+        sys.exit(1)
+
+    w = MainWindow()
+    w.show()
+    app.exec()
