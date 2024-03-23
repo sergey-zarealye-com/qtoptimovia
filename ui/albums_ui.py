@@ -14,9 +14,9 @@ class AlbumsUI:
             layout.addWidget(tree)
             root_model = QStandardItemModel()
             tree.setModel(root_model)
-            tree.model().setHorizontalHeaderLabels([''])
             AlbumsModel.fill_model_from_dict(root_model.invisibleRootItem(), AlbumsModel.albums_tree)
             tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            tree.setHeaderHidden(True)
         elif col == 1:
             layout.addWidget(QLabel('<h2>Videos</h2>'))
         elif col == 2:

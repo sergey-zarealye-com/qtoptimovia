@@ -16,6 +16,7 @@ from ui.ext_search_ui import ExtSearchUI
 import qdarktheme
 
 class MainWindowUI:
+
     def setup_ui(self, main_win: QMainWindow) -> None:
         # Actions
         sep1 = QAction()
@@ -28,7 +29,11 @@ class MainWindowUI:
             sep1,
             QAction(QIcon("icons/search_black_24dp.svg"), "Extended search"),
         )
-
+        self.actions_toolbar = (
+            QAction("Import"),
+            QAction("To album"),
+            QAction("To montage"),
+        )
 
         action_group_toolbar = QActionGroup(main_win)
 
@@ -50,6 +55,10 @@ class MainWindowUI:
             action_group_toolbar.addAction(action)
         self.actions_sidebar[0].setChecked(True)
 
+        for action in self.actions_toolbar:
+            self.toolbar.addAction(action)
+            action.setEnabled(False)
+
         # Setup Widgets
         spacer1 = QToolButton()
         spacer1.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -62,10 +71,6 @@ class MainWindowUI:
         hspacer1 = QToolButton()
         hspacer1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         hspacer1.setEnabled(False)
-
-        hspacer2 = QToolButton()
-        hspacer2.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        hspacer2.setEnabled(False)
 
         sidebar.setIconSize(QSize(36, 36))
         sidebar.setMovable(False)
@@ -84,15 +89,17 @@ class MainWindowUI:
         search_btn = QToolButton()
         search_btn.setIcon(QIcon("icons/search_black_24dp.svg"))
         self.toolbar.addWidget(search_btn)
-        self.toolbar.addWidget(hspacer2)
 
         tool_btn_settings.setIcon(QIcon("icons/settings_black_24dp.svg"))
 
+        self.pages = []
         for stack_idx, stack_widget in enumerate((self.col1_stack_widget, self.col2_stack_widget, self.col3_stack_widget)):
             for ui in (AlbumsUI, FilesUI, ArchiveUI, MontageUI, ExtSearchUI):
                 container = QWidget()
-                ui().setup_ui(container, stack_idx)
+                page = ui()
+                page.setup_ui(container, stack_idx)
                 stack_widget.addWidget(container)
+                self.pages.append(page)
 
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -118,15 +125,36 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self._ui = MainWindowUI()
-        self._ui.setup_ui(self)
+        self.ui = MainWindowUI()
+        self.ui.setup_ui(self)
         self._theme = "dark"
 
         self.setWindowTitle("Optimovia")
         self.setMinimumSize(900, 600)
 
-        for action in self._ui.actions_sidebar:
+        for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
+
+        self.ui.actions_toolbar[0].triggered.connect(self.import_video_files) #Import tool button
+
+        # Files tree signals:
+        self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
+        self.ui.pages[1].tree.collapsed.connect(self.collapse_files)
+
+    @Slot()
+    def import_video_files(self, e):
+        print(self.video_files_in_directory)
+
+    @Slot()
+    def show_files_in_dir(self, idx):
+        dir_path = self.ui.pages[1].model.get_file_path(idx)
+        self.video_files_in_directory = self.ui.pages[1].model.get_video_files(dir_path)
+        self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0) #Import tool button
+
+    @Slot()
+    def collapse_files(self, idx):
+        self.ui.actions_toolbar[0].setEnabled(False) #Import tool button
+        print('Collapsed', idx)
 
     @Slot()
     def change_page(self) -> None:
@@ -141,9 +169,9 @@ class MainWindow(QMainWindow):
             index = 3
         else:
             index = 4
-        self._ui.col1_stack_widget.setCurrentIndex(index)
-        self._ui.col2_stack_widget.setCurrentIndex(index)
-        self._ui.col3_stack_widget.setCurrentIndex(index)
+        self.ui.col1_stack_widget.setCurrentIndex(index)
+        self.ui.col2_stack_widget.setCurrentIndex(index)
+        self.ui.col3_stack_widget.setCurrentIndex(index)
 
 
 app = QApplication(sys.argv)
