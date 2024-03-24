@@ -1,4 +1,4 @@
-from PySide6.QtGui import QStandardItem
+from PyQt5.QtGui import QStandardItem
 
 class AlbumsModel():
     albums_tree = {

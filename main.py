@@ -1,12 +1,12 @@
 import sys
-from PySide6.QtWidgets import (
-    QMainWindow, QApplication,
+from PyQt5.QtWidgets import (
+    QMainWindow, QApplication, QAction, QActionGroup,
     QLabel, QToolBar, QStatusBar,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
     QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox)
-from PySide6.QtGui import QAction, QIcon, QActionGroup
-from PySide6.QtCore import Qt, QSize, Slot
-from PySide6.QtSql import QSqlDatabase
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt, QSize, QModelIndex
+from PyQt5.QtSql import QSqlDatabase
 
 from ui.albums_ui import AlbumsUI
 from ui.files_ui import FilesUI
@@ -17,9 +17,10 @@ from models.files import FilesModel
 
 import qdarktheme
 
+
 class MainWindowUI:
 
-    def setup_ui(self, main_win: QMainWindow) -> None:
+    def __init__(self, main_win: QMainWindow):
         # Actions
         sep1 = QAction()
         sep1.setSeparator(True)
@@ -81,7 +82,7 @@ class MainWindowUI:
         sidebar.addWidget(spacer2)
         sidebar.addWidget(tool_btn_settings)
 
-        self.toolbar.setIconSize(QSize(24, 24))
+        self.toolbar.setIconSize(QSize(36, 36))
         self.toolbar.setMovable(False)
         self.toolbar.addWidget(hspacer1)
         search_fld = QLineEdit()
@@ -95,13 +96,16 @@ class MainWindowUI:
         tool_btn_settings.setIcon(QIcon("icons/settings_black_24dp.svg"))
 
         self.pages = []
-        for stack_idx, stack_widget in enumerate((self.col1_stack_widget, self.col2_stack_widget, self.col3_stack_widget)):
-            for ui in (AlbumsUI, FilesUI, ArchiveUI, MontageUI, ExtSearchUI):
+
+        for ui in (AlbumsUI, FilesUI, ArchiveUI, MontageUI, ExtSearchUI):
+            page = ui()
+            for stack_idx, stack_widget in enumerate((self.col1_stack_widget,
+                                                      self.col2_stack_widget,
+                                                      self.col3_stack_widget)):
                 container = QWidget()
-                page = ui()
                 page.setup_ui(container, stack_idx)
                 stack_widget.addWidget(container)
-                self.pages.append(page)
+            self.pages.append(page)
 
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -122,14 +126,13 @@ class MainWindowUI:
         main_win.setMenuBar(menubar)
         main_win.setStatusBar(statusbar)
 
+
 class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self.ui = MainWindowUI()
-        self.ui.setup_ui(self)
-        self._theme = "dark"
+        self.ui = MainWindowUI(self)
 
         self.setWindowTitle("Optimovia")
         self.setMinimumSize(900, 600)
@@ -144,25 +147,27 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
         self.ui.pages[1].tree.collapsed.connect(self.collapse_files)
 
-    @Slot()
+        # Stubs
+        self.video_files_in_directory = None
+
     def import_video_files(self, e):
         ### TODO make slot to import selected files only, not just the full dir
         FilesModel.import_files(self.video_files_in_directory)
 
-    @Slot()
     def show_files_in_dir(self, idx):
         dir_path = self.ui.pages[1].model.get_file_path(idx)
         self.video_files_in_directory = self.ui.pages[1].model.get_video_files(dir_path)
+        self.ui.pages[1].files_list_model.db_model.setFilter(f"import_dir='{dir_path}'")
+        self.ui.pages[1].files_list_model.db_model.select()
+        self.ui.pages[1].files_list_model.layoutChanged.emit()
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
 
-    @Slot()
     def collapse_files(self, idx):
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(False)
         print('Collapsed', idx)
 
-    @Slot()
     def change_page(self) -> None:
         action_name = self.sender().text()  # type: ignore
         if "albums" in action_name:

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
 
 
 class ArchiveUI:
@@ -8,11 +8,11 @@ class ArchiveUI:
         widget_container = QWidget()
         layout = QVBoxLayout(widget_container)
         if col == 0:
-            layout.addWidget(QLabel('<h2>Archives</h2>'))
+            layout.addWidget(QLabel('<h3>Archives</h3>'))
         elif col == 1:
-            layout.addWidget(QLabel('<h2>Videos</h2>'))
+            layout.addWidget(QLabel('<h3>Videos</h3>'))
         elif col == 2:
-            layout.addWidget(QLabel('<h2>Scenes</h2>'))
+            layout.addWidget(QLabel('<h3>Scenes</h3>'))
 
         scroll_area = QScrollArea()
         scroll_area.setWidget(widget_container)

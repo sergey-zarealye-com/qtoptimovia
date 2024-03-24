@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
 
 
 class MontageUI:
@@ -8,11 +8,11 @@ class MontageUI:
         widget_container = QWidget()
         layout = QVBoxLayout(widget_container)
         if col == 0:
-            layout.addWidget(QLabel('<h2>Montage projects</h2>'))
+            layout.addWidget(QLabel('<h3>Montage projects</h3>'))
         elif col == 1:
-            layout.addWidget(QLabel('<h2>Source videos</h2>'))
+            layout.addWidget(QLabel('<h3>Source videos</h3>'))
         elif col == 2:
-            layout.addWidget(QLabel('<h2>Storyboard</h2>'))
+            layout.addWidget(QLabel('<h3>Storyboard</h3>'))
 
         scroll_area = QScrollArea()
         scroll_area.setWidget(widget_container)

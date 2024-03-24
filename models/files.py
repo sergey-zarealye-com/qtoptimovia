@@ -1,25 +1,39 @@
-from PySide6.QtCore import QDir
-from PySide6.QtWidgets import QFileSystemModel, QMessageBox
-from PySide6.QtSql import QSqlDatabase, QSqlQuery
+from PyQt5.QtCore import Qt, QDir, QAbstractListModel
+from PyQt5.QtWidgets import QFileSystemModel, QMessageBox
+from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
+
 import os
 
-class FilesModel():
+class FilesModel(QAbstractListModel):
     FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
     FILE_EXTS = ['.mov', '.avi', '.mp4']
 
     def __init__(self):
-        self.model = QFileSystemModel()
-        self.model.setRootPath(QDir.currentPath())
-        self.model.setNameFilters(FilesModel.FILE_FILTERS)
-        self.model.setNameFilterDisables(False)
+        super().__init__()
+        self.fs_model = QFileSystemModel()
+        self.fs_model.setRootPath(QDir.currentPath())
+        self.fs_model.setNameFilters(FilesModel.FILE_FILTERS)
+        self.fs_model.setNameFilterDisables(False)
         self.setup_db()
+        self.selected_dir = None
+        self.db_model = QSqlTableModel()
+        self.db_model.setTable("video_files")
 
-    def get_model(self):
-        return self.model
+    def data(self, i, role):
+        if role == Qt.DisplayRole:
+            import_name = self.db_model.data(self.db_model.index(i.row(), self.db_model.fieldIndex("import_name")))
+            proc_progress = self.db_model.data(self.db_model.index(i.row(), self.db_model.fieldIndex("proc_progress")))
+            return import_name
+
+    def rowCount(self, index):
+        if index.isValid():
+            0
+        else:
+            return self.db_model.rowCount()
 
     def setup_db(self):
-        createTableQuery = QSqlQuery()
-        createTableQuery.exec(
+        create_table_query = QSqlQuery()
+        create_table_query.exec(
             """
             CREATE TABLE IF NOT EXISTS video_files (
                 id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
@@ -35,30 +49,31 @@ class FilesModel():
             )
             """
         )
-        createIdxQuery1 = QSqlQuery()
-        createIdxQuery1.exec(
+        create_idx_query1 = QSqlQuery()
+        create_idx_query1.exec(
             """
             CREATE INDEX IF NOT EXISTS idx_video_files_import_dir ON video_files(import_dir)
             """
         )
-        createIdxQuery2 = QSqlQuery()
-        createIdxQuery2.exec(
+        create_idx_query2 = QSqlQuery()
+        create_idx_query2.exec(
             """
             CREATE INDEX IF NOT EXISTS idx_video_files_import_name ON video_files(import_name)
             """
         )
 
     def get_file_path(self, idx):
-        return self.model.filePath(idx)
+        self.selected_dir = self.fs_model.filePath(idx)
+        return self.selected_dir
 
     def get_video_files(self, dir_path):
+        # self.db_model.setFilter(f"import_dir='{dir_path}'")
+        # self.db_model.select()
+        # print('get_video_files', self.db_model.rowCount())
         files = os.listdir(dir_path)
         return [os.path.join(dir_path, fn) for fn in files
                 if os.path.splitext(os.path.join(dir_path, fn))[1].lower() in FilesModel.FILE_EXTS
         ]
-
-    # @staticmethod
-    # def get_imported_files
 
     @staticmethod
     def import_files(flist: list[str]):
