@@ -37,6 +37,10 @@ class FilesUI:
             proc_delegate = ProgressDelegate(self.files_list_view)
             self.files_list_view.setItemDelegateForColumn(self.files_list_model.get_progress_section(), proc_delegate)
 
+            for i, f in enumerate(self.files_list_model.fields):
+                if f not in FilesModel.COLUMNS:
+                    self.files_list_view.setColumnHidden(i, True)
+
             layout.addWidget(self.files_list_view)
         elif col == 2:
             layout.addWidget(QLabel('<h3>Scenes</h3>'))

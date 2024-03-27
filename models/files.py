@@ -1,19 +1,16 @@
 from PyQt5.QtCore import Qt, QDir, QAbstractTableModel
 from PyQt5.QtWidgets import QFileSystemModel, QMessageBox
-from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
+from PyQt5.QtSql import QSqlQuery, QSqlTableModel
 
 import os
-from operator import itemgetter
 
-def collect(l, index):
-   return list(map(itemgetter(index), l))
 
 class FilesModel(QAbstractTableModel):
     FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
     FILE_EXTS = ['.mov', '.avi', '.mp4']
-    COLUMNS = [("description", "Description"),
+    COLUMNS = dict([("description", "Description"),
                ("proc_progress", "Processed"),
-    ]
+    ])
 
 
     def __init__(self):
@@ -22,7 +19,7 @@ class FilesModel(QAbstractTableModel):
         self.fs_model.setRootPath(QDir.currentPath())
         self.fs_model.setNameFilters(FilesModel.FILE_FILTERS)
         self.fs_model.setNameFilterDisables(False)
-        self.setup_db()
+        self.fields = self.setup_db()
         self.selected_dir = None
         self.db_model = QSqlTableModel()
         self.db_model.setTable("video_files")
@@ -32,16 +29,11 @@ class FilesModel(QAbstractTableModel):
         row = index.row()
         col= index.column()
         if role == Qt.DisplayRole or role == Qt.EditRole:
-            return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex(FilesModel.COLUMNS[col][0])))
+            return self.db_model.data(self.db_model.index(row, col))
 
-    def get_id(self, index):
-        row = index.row()
-        return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex('id')))
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return FilesModel.COLUMNS[section][1]
-        return super().headerData(section, orientation, role)
+    # def get_id(self, index):
+    #     row = index.row()
+    #     return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex('id')))
 
     def rowCount(self, index):
         if index.isValid():
@@ -52,12 +44,8 @@ class FilesModel(QAbstractTableModel):
     def setData(self, index, value, role):
         if role == Qt.EditRole:
             col = index.column()
-            row = index.row()
             if col in self.get_editable_columns():
-                print(row, col, value)
-                id = self.get_id(index)
-                field = FilesModel.COLUMNS[col][0]
-                ok = self.update_field(id, field, value)
+                ok = self.db_model.setData(index, value, role)
                 return ok
             else:
                 return False
@@ -70,18 +58,23 @@ class FilesModel(QAbstractTableModel):
         else:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-    def get_progress_section(self):
-        return collect(FilesModel.COLUMNS, 0).index('proc_progress')
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if self.fields[section] in FilesModel.COLUMNS:
+                return FilesModel.COLUMNS[self.fields[section]]
+        return super().headerData(section, orientation, role)
 
+    def get_progress_section(self):
+        return self.fields.index('proc_progress')
+    #
     def get_editable_columns(self):
-        l = collect(FilesModel.COLUMNS, 0)
-        return [l.index('description')]
+        return [self.fields.index('description')]
 
     def columnCount(self, index):
         if index.isValid():
             0
         else:
-            return len(FilesModel.COLUMNS)
+            return self.db_model.columnCount()
 
     def setup_db(self):
         create_table_query = QSqlQuery()
@@ -113,6 +106,16 @@ class FilesModel(QAbstractTableModel):
             CREATE INDEX IF NOT EXISTS idx_video_files_import_name ON video_files(import_name)
             """
         )
+        return ['id' ,
+                'import_name' ,
+                'import_dir' ,
+                'cache_path' ,
+                'archive_path' ,
+                'imported_at' ,
+                'processed_at' ,
+                'archived_at' ,
+                'proc_progress' ,
+                'description']
 
     def get_file_path(self, idx):
         self.selected_dir = self.fs_model.filePath(idx)
