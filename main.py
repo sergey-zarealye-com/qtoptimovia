@@ -197,6 +197,7 @@ if __name__ == "__main__":
     con.setDatabaseName("data/optimovia.db")
 
     app = QApplication(sys.argv)
+    # app.setStyle("Fusion")
     qdarktheme.setup_theme('auto')
 
     # Try to open the connection and handle possible errors

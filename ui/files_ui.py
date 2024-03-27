@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView,
-                             QSizePolicy, QTableView,
-                             QHeaderView)
+                             QSizePolicy, QTableView, QApplication,
+                             QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QStyle)
+from PyQt5.QtCore import Qt, QSize
 
 from models.files import FilesModel
 
@@ -24,14 +25,30 @@ class FilesUI:
             layout.addWidget(QLabel('<h3>Imported videos</h3>'))
             self.files_list_view.setModel(self.files_list_model)
             self.files_list_view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
             # QTableView Headers
             horizontal_header = self.files_list_view.horizontalHeader()
             vertical_header = self.files_list_view.verticalHeader()
-            horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+            horizontal_header.setSectionResizeMode(QHeaderView.Interactive)
             vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
             horizontal_header.setStretchLastSection(True)
+            vertical_header.hide()
+
+            proc_delegate = ProgressDelegate(self.files_list_view)
+            self.files_list_view.setItemDelegateForColumn(self.files_list_model.get_progress_section(), proc_delegate)
+
             layout.addWidget(self.files_list_view)
         elif col == 2:
             layout.addWidget(QLabel('<h3>Scenes</h3>'))
         v_main_layout = QVBoxLayout(win)
         v_main_layout.addWidget(widget_container)
+
+class ProgressDelegate(QStyledItemDelegate):
+    def paint(self, painter, option, index):
+        progress = index.data(Qt.DisplayRole)
+        opt = QStyleOptionProgressBar()
+        opt.rect = option.rect
+        opt.minimum = 0
+        opt.maximum = 100
+        opt.progress = int(progress)
+        QApplication.style().drawControl(QStyle.CE_ProgressBar, opt, painter)

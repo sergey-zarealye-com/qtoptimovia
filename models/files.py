@@ -3,6 +3,10 @@ from PyQt5.QtWidgets import QFileSystemModel, QMessageBox
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
 
 import os
+from operator import itemgetter
+
+def collect(l, index):
+   return list(map(itemgetter(index), l))
 
 class FilesModel(QAbstractTableModel):
     FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
@@ -10,6 +14,7 @@ class FilesModel(QAbstractTableModel):
     COLUMNS = [("description", "Description"),
                ("proc_progress", "Processed"),
     ]
+
 
     def __init__(self):
         super().__init__()
@@ -21,12 +26,17 @@ class FilesModel(QAbstractTableModel):
         self.selected_dir = None
         self.db_model = QSqlTableModel()
         self.db_model.setTable("video_files")
+        self.db_model.setEditStrategy(QSqlTableModel.OnFieldChange)
 
-    def data(self, i, role):
-        row = i.row()
-        col= i.column()
-        if role == Qt.DisplayRole:
+    def data(self, index, role):
+        row = index.row()
+        col= index.column()
+        if role == Qt.DisplayRole or role == Qt.EditRole:
             return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex(FilesModel.COLUMNS[col][0])))
+
+    def get_id(self, index):
+        row = index.row()
+        return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex('id')))
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -38,6 +48,34 @@ class FilesModel(QAbstractTableModel):
             0
         else:
             return self.db_model.rowCount()
+
+    def setData(self, index, value, role):
+        if role == Qt.EditRole:
+            col = index.column()
+            row = index.row()
+            if col in self.get_editable_columns():
+                print(row, col, value)
+                id = self.get_id(index)
+                field = FilesModel.COLUMNS[col][0]
+                ok = self.update_field(id, field, value)
+                return ok
+            else:
+                return False
+        return True
+
+    def flags(self, index):
+        col = index.column()
+        if col in self.get_editable_columns():
+            return Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        else:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+    def get_progress_section(self):
+        return collect(FilesModel.COLUMNS, 0).index('proc_progress')
+
+    def get_editable_columns(self):
+        l = collect(FilesModel.COLUMNS, 0)
+        return [l.index('description')]
 
     def columnCount(self, index):
         if index.isValid():
@@ -81,9 +119,6 @@ class FilesModel(QAbstractTableModel):
         return self.selected_dir
 
     def get_video_files(self, dir_path):
-        # self.db_model.setFilter(f"import_dir='{dir_path}'")
-        # self.db_model.select()
-        # print('get_video_files', self.db_model.rowCount())
         files = os.listdir(dir_path)
         return [os.path.join(dir_path, fn) for fn in files
                 if os.path.splitext(os.path.join(dir_path, fn))[1].lower() in FilesModel.FILE_EXTS
@@ -127,3 +162,17 @@ class FilesModel(QAbstractTableModel):
             "Video files import finished",
             f"{fcount} files were scheduled for processing"
         )
+
+    def update_field(self, id, field, value):
+        query = QSqlQuery()
+        query.exec("UPDATE video_files SET description = 'eee' WHERE id = 13")
+        # query.prepare("UPDATE video_files SET ? = ? WHERE id = ?")
+        # query.addBindValue(field)
+        # query.addBindValue(value)
+        # query.addBindValue(id)
+        # ok = query.exec()
+        # print(ok)
+        print(query.last())
+        print(query.lastError().driverText())
+        print(query.lastError().databaseText())
+        return True
