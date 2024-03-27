@@ -153,6 +153,8 @@ class MainWindow(QMainWindow):
     def import_video_files(self, e):
         ### TODO make slot to import selected files only, not just the full dir
         FilesModel.import_files(self.video_files_in_directory)
+        self.ui.pages[1].files_list_model.db_model.select()
+        self.ui.pages[1].files_list_model.layoutChanged.emit()
 
     def show_files_in_dir(self, idx):
         dir_path = self.ui.pages[1].model.get_file_path(idx)
