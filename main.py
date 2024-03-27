@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
-    QLabel, QToolBar, QStatusBar,
+    QLabel, QToolBar, QStatusBar, QDesktopWidget,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
     QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox)
 from PyQt5.QtGui import QIcon
@@ -135,7 +135,8 @@ class MainWindow(QMainWindow):
         self.ui = MainWindowUI(self)
 
         self.setWindowTitle("Optimovia")
-        self.setMinimumSize(900, 600)
+        geometry = QDesktopWidget().availableGeometry(screen = -1)
+        self.setMinimumSize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -150,25 +151,28 @@ class MainWindow(QMainWindow):
         # Stubs
         self.video_files_in_directory = None
 
+    def update_layout(self, model, set_filter=None):
+        if set_filter != None:
+            model.db_model.setFilter(set_filter)
+        model.db_model.select()
+        model.layoutChanged.emit()
+
     def import_video_files(self, e):
         ### TODO make slot to import selected files only, not just the full dir
         FilesModel.import_files(self.video_files_in_directory)
-        self.ui.pages[1].files_list_model.db_model.select()
-        self.ui.pages[1].files_list_model.layoutChanged.emit()
+        self.update_layout(self.ui.pages[1].files_list_model)
 
     def show_files_in_dir(self, idx):
         dir_path = self.ui.pages[1].model.get_file_path(idx)
         self.video_files_in_directory = self.ui.pages[1].model.get_video_files(dir_path)
-        self.ui.pages[1].files_list_model.db_model.setFilter(f"import_dir='{dir_path}'")
-        self.ui.pages[1].files_list_model.db_model.select()
-        self.ui.pages[1].files_list_model.layoutChanged.emit()
+        self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
 
     def collapse_files(self, idx):
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(False)
-        print('Collapsed', idx)
+        self.update_layout(self.ui.pages[1].files_list_model, set_filter='0')
 
     def change_page(self) -> None:
         action_name = self.sender().text()  # type: ignore

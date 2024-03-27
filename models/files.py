@@ -1,12 +1,15 @@
-from PyQt5.QtCore import Qt, QDir, QAbstractListModel
+from PyQt5.QtCore import Qt, QDir, QAbstractTableModel
 from PyQt5.QtWidgets import QFileSystemModel, QMessageBox
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery, QSqlTableModel
 
 import os
 
-class FilesModel(QAbstractListModel):
+class FilesModel(QAbstractTableModel):
     FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
     FILE_EXTS = ['.mov', '.avi', '.mp4']
+    COLUMNS = [("description", "Description"),
+               ("proc_progress", "Processed"),
+    ]
 
     def __init__(self):
         super().__init__()
@@ -20,16 +23,27 @@ class FilesModel(QAbstractListModel):
         self.db_model.setTable("video_files")
 
     def data(self, i, role):
+        row = i.row()
+        col= i.column()
         if role == Qt.DisplayRole:
-            import_name = self.db_model.data(self.db_model.index(i.row(), self.db_model.fieldIndex("import_name")))
-            proc_progress = self.db_model.data(self.db_model.index(i.row(), self.db_model.fieldIndex("proc_progress")))
-            return import_name
+            return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex(FilesModel.COLUMNS[col][0])))
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return FilesModel.COLUMNS[section][1]
+        return super().headerData(section, orientation, role)
 
     def rowCount(self, index):
         if index.isValid():
             0
         else:
             return self.db_model.rowCount()
+
+    def columnCount(self, index):
+        if index.isValid():
+            0
+        else:
+            return len(FilesModel.COLUMNS)
 
     def setup_db(self):
         create_table_query = QSqlQuery()
@@ -93,7 +107,7 @@ class FilesModel(QAbstractListModel):
                 proc_progress,
                 description
             ) 
-            VALUES (?, ?, NULL, NULL, DATETIME('now', 'localtime'), NULL, NULL, 0, '')
+            VALUES (?, ?, NULL, NULL, DATETIME('now', 'localtime'), NULL, NULL, 0, ?)
             """
         )
         fcount = 0
@@ -105,6 +119,7 @@ class FilesModel(QAbstractListModel):
             if not select_query.first():
                 insert_query.addBindValue(fname)
                 insert_query.addBindValue(path)
+                insert_query.addBindValue(fname)
                 insert_query.exec()
                 fcount += 1
         QMessageBox.information(
