@@ -19,8 +19,7 @@ from models.files import FilesModel
 
 import qdarktheme
 
-from workers.import_processor import ImportProcessor
-from workers.worker import Worker
+from workers.video_import_worker import VideoImportWorker
 
 
 class MainWindowUI:
@@ -134,7 +133,7 @@ class MainWindowUI:
 
 class MainWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, connection):
         super(MainWindow, self).__init__()
 
         self.ui = MainWindowUI(self)
@@ -142,6 +141,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Optimovia")
         geometry = QDesktopWidget().availableGeometry(screen = -1)
         self.setMinimumSize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
+        self.db = connection
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -159,25 +159,34 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.threadpool = QThreadPool()
-        self.threadpool.setMaxThreadCount(2)
+        # self.threadpool.setMaxThreadCount(1)
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
-    def progress_fn(self, n):
-        print("%.2f%% done" % n)
+    def progress_fn(self, id:int, progress:float):
+        FilesModel.update_fields(id, dict(proc_progress=progress))
+        print("%.2f%% done" % progress)
+        self.update_layout(self.ui.pages[1].files_list_model)
 
     def print_output(self, s):
         print(s)
+
+    def update_metadata(self, id:int, metadata:dict):
+        FilesModel.update_fields(id, metadata)
+        self.update_layout(self.ui.pages[1].files_list_model)
 
     def thread_complete(self):
         print("THREAD COMPLETE!")
 
     def init_importing_workers(self):
-        processor = ImportProcessor()
-        for id in FilesModel.get_nonstarted_imports():
-            worker = Worker(processor.main, progress_callback=self.progress_fn, id=id)
+        for id in FilesModel.select_nonstarted_imports(self.db):
+            worker = VideoImportWorker(id=id, db=self.db,
+                                       progress_callback=self.progress_fn,
+                                       metadata_callback=self.update_metadata
+                                       )
             worker.signals.result.connect(self.print_output)
             worker.signals.finished.connect(self.thread_complete)
             worker.signals.progress.connect(self.progress_fn)
+            worker.signals.metadata_result.connect(self.update_metadata)
             self.threadpool.start(worker)
 
     def update_layout(self, model, set_filter=None):
@@ -238,6 +247,6 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    w = MainWindow()
+    w = MainWindow(con)
     w.show()
     app.exec()

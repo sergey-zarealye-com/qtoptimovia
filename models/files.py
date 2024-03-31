@@ -8,8 +8,10 @@ import os
 class FilesModel(QAbstractTableModel):
     FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
     FILE_EXTS = ['.mov', '.avi', '.mp4']
-    COLUMNS = dict([("description", "Description"),
-               ("proc_progress", "Processed"),
+    COLUMNS = dict([
+        ("description", "Description"),
+        ("creation_time", "Created at"),
+        ("proc_progress", "Processed"),
     ])
 
 
@@ -30,10 +32,6 @@ class FilesModel(QAbstractTableModel):
         col= index.column()
         if role == Qt.DisplayRole or role == Qt.EditRole:
             return self.db_model.data(self.db_model.index(row, col))
-
-    # def get_id(self, index):
-    #     row = index.row()
-    #     return self.db_model.data(self.db_model.index(row, self.db_model.fieldIndex('id')))
 
     def rowCount(self, index):
         if index.isValid():
@@ -90,7 +88,21 @@ class FilesModel(QAbstractTableModel):
                 processed_at DATETIME,
                 archived_at DATETIME,
                 proc_progress FLOAT NOT NULL,
-                description TEXT
+                description TEXT,
+                fps FLOAT, 
+                creation_time DATETIME, 
+                duration FLOAT,
+                width INTEGER, 
+                height INTEGER, 
+                audio_depth FLOAT, 
+                aac_rate FLOAT, 
+                audio_channels INTEGER,
+                aspect FLOAT, 
+                rot FLOAT, 
+                sar FLOAT, 
+                dar FLOAT, 
+                start FLOAT, 
+                bitrate FLOAT
             )
             """
         )
@@ -115,7 +127,22 @@ class FilesModel(QAbstractTableModel):
                 'processed_at' ,
                 'archived_at' ,
                 'proc_progress' ,
-                'description']
+                'description',
+                'fps' ,
+                'creation_time' ,
+                'duration' ,
+                'width' ,
+                'height' ,
+                'audio_depth' ,
+                'aac_rate' ,
+                'audio_channels' ,
+                'aspect' ,
+                'rot' ,
+                'sar' ,
+                'dar' ,
+                'start' ,
+                'bitrate'
+                ]
 
     def get_file_path(self, idx):
         self.selected_dir = self.fs_model.filePath(idx)
@@ -130,7 +157,7 @@ class FilesModel(QAbstractTableModel):
     @staticmethod
     def import_files(flist: list[str]):
         select_query = QSqlQuery()
-        select_query.prepare(f"SELECT id from video_files where import_dir=? AND import_name=?")
+        select_query.prepare("SELECT id from video_files where import_dir=? AND import_name=?")
         insert_query = QSqlQuery()
         insert_query.prepare(
             """
@@ -167,11 +194,35 @@ class FilesModel(QAbstractTableModel):
         )
 
     @staticmethod
-    def get_nonstarted_imports():
-        select_query = QSqlQuery()
+    def select_nonstarted_imports(db):
+        select_query = QSqlQuery(db=db)
         select_query.exec("SELECT id from video_files where processed_at IS NULL AND proc_progress=0.0")
         out = []
         while select_query.next():
-            print(select_query.value(0))
             out.append(select_query.value(0))
         return out
+
+    @staticmethod
+    def select_file_path(id:int,  db):
+        select_query = QSqlQuery(db=db)
+        select_query.prepare("SELECT import_name, import_dir FROM video_files WHERE id=?")
+        select_query.addBindValue(id)
+        select_query.exec()
+        if select_query.first():
+            return os.path.join(select_query.value(1), select_query.value(0))
+        else:
+            return None
+
+    @staticmethod
+    def update_fields(id:int, data:dict):
+        updates = [f"{k}=?" for k in data.keys()]
+        if len(updates):
+            sql = f"UPDATE video_files SET {', '.join(updates)} WHERE id=?"
+            update_query = QSqlQuery()
+            update_query.prepare(sql)
+            for k in data.keys():
+                update_query.addBindValue(data[k])
+            update_query.addBindValue(id)
+            update_query.exec()
+        else:
+            raise Exception('Program error: empy list of fields to update')
