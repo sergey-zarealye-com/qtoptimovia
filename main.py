@@ -1,11 +1,13 @@
 import sys
+import time
+
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
     QLabel, QToolBar, QStatusBar, QDesktopWidget,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
     QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox)
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSize, QModelIndex
+from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
 from PyQt5.QtSql import QSqlDatabase
 
 from ui.albums_ui import AlbumsUI
@@ -16,6 +18,9 @@ from ui.ext_search_ui import ExtSearchUI
 from models.files import FilesModel
 
 import qdarktheme
+
+from workers.import_processor import ImportProcessor
+from workers.worker import Worker
 
 
 class MainWindowUI:
@@ -143,6 +148,7 @@ class MainWindow(QMainWindow):
 
         # Import tool button
         self.ui.actions_toolbar[0].triggered.connect(self.import_video_files)
+        self.ui.actions_toolbar[0].triggered.connect(self.init_importing_workers)
 
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
@@ -150,6 +156,29 @@ class MainWindow(QMainWindow):
 
         # Stubs
         self.video_files_in_directory = None
+
+        # Workers
+        self.threadpool = QThreadPool()
+        self.threadpool.setMaxThreadCount(2)
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+
+    def progress_fn(self, n):
+        print("%.2f%% done" % n)
+
+    def print_output(self, s):
+        print(s)
+
+    def thread_complete(self):
+        print("THREAD COMPLETE!")
+
+    def init_importing_workers(self):
+        processor = ImportProcessor()
+        for id in FilesModel.get_nonstarted_imports():
+            worker = Worker(processor.main, progress_callback=self.progress_fn, id=id)
+            worker.signals.result.connect(self.print_output)
+            worker.signals.finished.connect(self.thread_complete)
+            worker.signals.progress.connect(self.progress_fn)
+            self.threadpool.start(worker)
 
     def update_layout(self, model, set_filter=None):
         if set_filter != None:
@@ -163,8 +192,8 @@ class MainWindow(QMainWindow):
         self.update_layout(self.ui.pages[1].files_list_model)
 
     def show_files_in_dir(self, idx):
-        dir_path = self.ui.pages[1].model.get_file_path(idx)
-        self.video_files_in_directory = self.ui.pages[1].model.get_video_files(dir_path)
+        dir_path = self.ui.pages[1].files_list_model.get_file_path(idx)
+        self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)

@@ -166,16 +166,12 @@ class FilesModel(QAbstractTableModel):
             f"{fcount} files were scheduled for processing"
         )
 
-    def update_field(self, id, field, value):
-        query = QSqlQuery()
-        query.exec("UPDATE video_files SET description = 'eee' WHERE id = 13")
-        # query.prepare("UPDATE video_files SET ? = ? WHERE id = ?")
-        # query.addBindValue(field)
-        # query.addBindValue(value)
-        # query.addBindValue(id)
-        # ok = query.exec()
-        # print(ok)
-        print(query.last())
-        print(query.lastError().driverText())
-        print(query.lastError().databaseText())
-        return True
+    @staticmethod
+    def get_nonstarted_imports():
+        select_query = QSqlQuery()
+        select_query.exec("SELECT id from video_files where processed_at IS NULL AND proc_progress=0.0")
+        out = []
+        while select_query.next():
+            print(select_query.value(0))
+            out.append(select_query.value(0))
+        return out

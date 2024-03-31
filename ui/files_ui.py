@@ -9,7 +9,7 @@ from models.files import FilesModel
 class FilesUI:
     def __init__(self):
         self.tree = QTreeView()
-        self.model = FilesModel()
+        # self.model = FilesModel()
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel()
 
@@ -18,7 +18,7 @@ class FilesUI:
         layout = QVBoxLayout(widget_container)
         if col == 0:
             layout.addWidget(QLabel('<h3>Local files</h3>'))
-            self.tree.setModel(self.model.fs_model)
+            self.tree.setModel(self.files_list_model.fs_model)
             layout.addWidget(self.tree)
             self.tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         elif col == 1:
