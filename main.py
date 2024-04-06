@@ -1,5 +1,4 @@
 import sys
-import time
 
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
@@ -133,7 +132,7 @@ class MainWindowUI:
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, connection):
+    def __init__(self, db):
         super(MainWindow, self).__init__()
 
         self.ui = MainWindowUI(self)
@@ -141,7 +140,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Optimovia")
         geometry = QDesktopWidget().availableGeometry(screen = -1)
         self.setMinimumSize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
-        self.db = connection
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -157,13 +155,15 @@ class MainWindow(QMainWindow):
         # Stubs
         self.video_files_in_directory = None
 
+        self.db = db
+
         # Workers
         self.threadpool = QThreadPool()
         # self.threadpool.setMaxThreadCount(1)
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
     def progress_fn(self, id:int, progress:float):
-        FilesModel.update_fields(id, dict(proc_progress=progress))
+        FilesModel.update_fields(self.db, id, dict(proc_progress=progress))
         print("%.2f%% done" % progress)
         self.update_layout(self.ui.pages[1].files_list_model)
 
@@ -171,7 +171,7 @@ class MainWindow(QMainWindow):
         print(s)
 
     def update_metadata(self, id:int, metadata:dict):
-        FilesModel.update_fields(id, metadata)
+        FilesModel.update_fields(self.db, id, metadata)
         self.update_layout(self.ui.pages[1].files_list_model)
 
     def thread_complete(self):
@@ -179,7 +179,7 @@ class MainWindow(QMainWindow):
 
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports(self.db):
-            worker = VideoImportWorker(id=id, db=self.db,
+            worker = VideoImportWorker(id=id,
                                        progress_callback=self.progress_fn,
                                        metadata_callback=self.update_metadata
                                        )
@@ -197,7 +197,7 @@ class MainWindow(QMainWindow):
 
     def import_video_files(self, e):
         ### TODO make slot to import selected files only, not just the full dir
-        FilesModel.import_files(self.video_files_in_directory)
+        FilesModel.import_files(self.db, self.video_files_in_directory)
         self.update_layout(self.ui.pages[1].files_list_model)
 
     def show_files_in_dir(self, idx):
@@ -235,8 +235,10 @@ if __name__ == "__main__":
     con.setDatabaseName("data/optimovia.db")
 
     app = QApplication(sys.argv)
-    # app.setStyle("Fusion")
-    qdarktheme.setup_theme('auto')
+    if sys.platform == 'darwin':
+        app.setStyle("Fusion")
+    else:
+        qdarktheme.setup_theme('auto')
 
     # Try to open the connection and handle possible errors
     if not con.open():
@@ -248,5 +250,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     w = MainWindow(con)
+    w.setDocumentMode(True)
     w.show()
     app.exec()

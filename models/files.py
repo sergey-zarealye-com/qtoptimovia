@@ -155,8 +155,8 @@ class FilesModel(QAbstractTableModel):
         ]
 
     @staticmethod
-    def import_files(flist: list[str]):
-        select_query = QSqlQuery()
+    def import_files(db, flist: list[str]):
+        select_query = QSqlQuery(db=db)
         select_query.prepare("SELECT id from video_files where import_dir=? AND import_name=?")
         insert_query = QSqlQuery()
         insert_query.prepare(
@@ -203,7 +203,7 @@ class FilesModel(QAbstractTableModel):
         return out
 
     @staticmethod
-    def select_file_path(id:int,  db):
+    def select_file_path(db, id:int):
         select_query = QSqlQuery(db=db)
         select_query.prepare("SELECT import_name, import_dir FROM video_files WHERE id=?")
         select_query.addBindValue(id)
@@ -214,11 +214,11 @@ class FilesModel(QAbstractTableModel):
             return None
 
     @staticmethod
-    def update_fields(id:int, data:dict):
+    def update_fields(db, id:int, data:dict):
         updates = [f"{k}=?" for k in data.keys()]
         if len(updates):
             sql = f"UPDATE video_files SET {', '.join(updates)} WHERE id=?"
-            update_query = QSqlQuery()
+            update_query = QSqlQuery(db=db)
             update_query.prepare(sql)
             for k in data.keys():
                 update_query.addBindValue(data[k])

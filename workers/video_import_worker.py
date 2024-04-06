@@ -2,10 +2,12 @@ import os
 import datetime as dt
 import subprocess as sp
 import json
-import time
+import sys
 import traceback, sys
 
 from PyQt5.QtCore import *
+from PyQt5.QtSql import QSqlDatabase
+
 from models.files import FilesModel
 
 
@@ -59,8 +61,9 @@ class VideoImportWorker(QRunnable):
         self.kwargs['progress_callback'] = self.signals.progress
         self.kwargs['metadata_callback'] = self.signals.metadata_result
 
-        self.db = kwargs['db']
         self.id = kwargs['id']
+        self.db = QSqlDatabase.addDatabase("QSQLITE")
+        self.db.setDatabaseName("data/optimovia.db")
 
     @pyqtSlot()
     def run(self):
@@ -78,7 +81,7 @@ class VideoImportWorker(QRunnable):
             self.signals.finished.emit()
 
     def parse_metadata(self, *args, **kwargs):
-        fname = FilesModel.select_file_path(self.id, self.db)
+        fname = FilesModel.select_file_path(self.db, self.id)
         if fname == None:
             raise Exception(f"Record not found in video_files id {self.id}")
         else:
@@ -90,7 +93,10 @@ class VideoImportWorker(QRunnable):
             Stream #0:0: Video: rawvideo (UYVY / 0x59565955), uyvy422, 720x576, 172800 kb/s, 25 fps, 25 tbr, 25 tbn, 25 tbc
             Stream #0:0(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p, 1280x676 [SAR 1:1 DAR 320:169], 1959 kb/s, 25 fps, 25 tbr, 25 tbn, 50 tbc (default)
             """
-            FFPROBE = "ffmpeg/bin/ffprobe -v quiet -print_format json -show_format -show_streams"
+            if sys.platform == 'win32':
+                FFPROBE = "ffmpeg/bin/ffprobe -v quiet -print_format json -show_format -show_streams"
+            else:
+                FFPROBE = "ffprobe -v quiet -print_format json -show_format -show_streams"
             if not os.path.isfile(fname):
                 raise Exception('File not found: ' + fname)
             else:
