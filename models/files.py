@@ -187,15 +187,10 @@ class FilesModel(QAbstractTableModel):
                 insert_query.addBindValue(fname)
                 insert_query.exec()
                 fcount += 1
-        # QMessageBox.information(
-        #     None,
-        #     "Video files import finished",
-        #     f"{fcount} files were scheduled for processing"
-        # )
 
     @staticmethod
-    def select_nonstarted_imports(db):
-        select_query = QSqlQuery(db=db)
+    def select_nonstarted_imports():
+        select_query = QSqlQuery()
         select_query.exec("SELECT id from video_files where processed_at IS NULL AND proc_progress=0.0")
         out = []
         while select_query.next():
@@ -203,11 +198,12 @@ class FilesModel(QAbstractTableModel):
         return out
 
     @staticmethod
-    def select_file_path(id:int,  db):
-        select_query = QSqlQuery(db=db)
+    def select_file_path(id:int):
+        select_query = QSqlQuery()
         select_query.prepare("SELECT import_name, import_dir FROM video_files WHERE id=?")
         select_query.addBindValue(id)
-        select_query.exec()
+        if not select_query.exec():
+            print(select_query.lastError().text())
         if select_query.first():
             return os.path.join(select_query.value(1), select_query.value(0))
         else:
@@ -228,8 +224,8 @@ class FilesModel(QAbstractTableModel):
             raise Exception('Program error: empy list of fields to update')
 
     @staticmethod
-    def select_uniq_years_all(db, table_name, field):
-        select_query = QSqlQuery(db=db)
+    def select_uniq_years_all(table_name, field):
+        select_query = QSqlQuery()
         select_query.exec(f"SELECT STRFTIME('%Y', {field}) FROM {table_name} GROUP BY STRFTIME('%Y', {field})")
         out = []
         while select_query.next():
@@ -237,8 +233,8 @@ class FilesModel(QAbstractTableModel):
         return out
 
     @staticmethod
-    def select_uniq_months_by_year(db, table_name, field, year):
-        select_query = QSqlQuery(db=db)
+    def select_uniq_months_by_year(table_name, field, year):
+        select_query = QSqlQuery()
         select_query.prepare(f"SELECT STRFTIME('%m', {field}) FROM {table_name} WHERE STRFTIME('%Y', {field})=? GROUP BY STRFTIME('%m', {field})")
         select_query.addBindValue(year)
         select_query.exec()

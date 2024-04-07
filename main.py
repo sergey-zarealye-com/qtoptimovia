@@ -1,5 +1,4 @@
 import sys
-import time
 
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
@@ -133,7 +132,7 @@ class MainWindowUI:
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, connection):
+    def __init__(self):
         super(MainWindow, self).__init__()
 
         self.ui = MainWindowUI(self)
@@ -141,7 +140,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Optimovia")
         geometry = QDesktopWidget().availableGeometry(screen = -1)
         self.setMinimumSize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
-        self.db = connection
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -178,10 +176,12 @@ class MainWindow(QMainWindow):
         print("THREAD COMPLETE!")
 
     def init_importing_workers(self):
-        for id in FilesModel.select_nonstarted_imports(self.db):
-            worker = VideoImportWorker(id=id, db=self.db,
-                                       # progress_callback=self.progress_fn,
-                                       # metadata_callback=self.update_metadata
+        for id in FilesModel.select_nonstarted_imports():
+            fname = FilesModel.select_file_path(id)
+            worker = VideoImportWorker(id=id,
+                                       video_file_path=fname,
+                                       progress_callback=self.progress_fn,
+                                       metadata_callback=self.update_metadata
                                        )
             worker.signals.result.connect(self.print_output)
             worker.signals.finished.connect(self.thread_complete)
@@ -235,8 +235,10 @@ if __name__ == "__main__":
     con.setDatabaseName("data/optimovia.db")
 
     app = QApplication(sys.argv)
-    # app.setStyle("Fusion")
-    qdarktheme.setup_theme('auto')
+    if sys.platform == 'darwin':
+        app.setStyle("Fusion")
+    else:
+        qdarktheme.setup_theme('auto')
 
     # Try to open the connection and handle possible errors
     if not con.open():
@@ -247,6 +249,7 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
-    w = MainWindow(con)
+    w = MainWindow()
+    w.setDocumentMode(True)
     w.show()
     app.exec()
