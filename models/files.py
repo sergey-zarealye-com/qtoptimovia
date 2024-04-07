@@ -10,7 +10,7 @@ class FilesModel(QAbstractTableModel):
     FILE_EXTS = ['.mov', '.avi', '.mp4']
     COLUMNS = dict([
         ("description", "Description"),
-        ("creation_time", "Created at"),
+        ("created_at", "Created at"),
         ("proc_progress", "Processed"),
     ])
 
@@ -90,7 +90,7 @@ class FilesModel(QAbstractTableModel):
                 proc_progress FLOAT NOT NULL,
                 description TEXT,
                 fps FLOAT, 
-                creation_time DATETIME, 
+                created_at DATETIME, 
                 duration FLOAT,
                 width INTEGER, 
                 height INTEGER, 
@@ -129,7 +129,7 @@ class FilesModel(QAbstractTableModel):
                 'proc_progress' ,
                 'description',
                 'fps' ,
-                'creation_time' ,
+                'created_at' ,
                 'duration' ,
                 'width' ,
                 'height' ,
@@ -187,11 +187,11 @@ class FilesModel(QAbstractTableModel):
                 insert_query.addBindValue(fname)
                 insert_query.exec()
                 fcount += 1
-        QMessageBox.information(
-            None,
-            "Video files import finished",
-            f"{fcount} files were scheduled for processing"
-        )
+        # QMessageBox.information(
+        #     None,
+        #     "Video files import finished",
+        #     f"{fcount} files were scheduled for processing"
+        # )
 
     @staticmethod
     def select_nonstarted_imports(db):
@@ -226,3 +226,23 @@ class FilesModel(QAbstractTableModel):
             update_query.exec()
         else:
             raise Exception('Program error: empy list of fields to update')
+
+    @staticmethod
+    def select_uniq_years_all(db, table_name, field):
+        select_query = QSqlQuery(db=db)
+        select_query.exec(f"SELECT STRFTIME('%Y', {field}) FROM {table_name} GROUP BY STRFTIME('%Y', {field})")
+        out = []
+        while select_query.next():
+            out.append(select_query.value(0))
+        return out
+
+    @staticmethod
+    def select_uniq_months_by_year(db, table_name, field, year):
+        select_query = QSqlQuery(db=db)
+        select_query.prepare(f"SELECT STRFTIME('%m', {field}) FROM {table_name} WHERE STRFTIME('%Y', {field})=? GROUP BY STRFTIME('%m', {field})")
+        select_query.addBindValue(year)
+        select_query.exec()
+        out = []
+        while select_query.next():
+            out.append(select_query.value(0))
+        return out

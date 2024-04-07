@@ -180,8 +180,8 @@ class MainWindow(QMainWindow):
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports(self.db):
             worker = VideoImportWorker(id=id, db=self.db,
-                                       progress_callback=self.progress_fn,
-                                       metadata_callback=self.update_metadata
+                                       # progress_callback=self.progress_fn,
+                                       # metadata_callback=self.update_metadata
                                        )
             worker.signals.result.connect(self.print_output)
             worker.signals.finished.connect(self.thread_complete)
