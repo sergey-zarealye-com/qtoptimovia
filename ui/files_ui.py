@@ -9,7 +9,6 @@ from models.files import FilesModel
 class FilesUI:
     def __init__(self):
         self.tree = QTreeView()
-        # self.model = FilesModel()
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel()
 
@@ -21,6 +20,7 @@ class FilesUI:
             self.tree.setModel(self.files_list_model.fs_model)
             layout.addWidget(self.tree)
             self.tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            self.tree.setColumnWidth(0, 200)
         elif col == 1:
             layout.addWidget(QLabel('<h3>Imported videos</h3>'))
             self.files_list_view.setModel(self.files_list_model)

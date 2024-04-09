@@ -139,7 +139,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Optimovia")
         geometry = QDesktopWidget().availableGeometry(screen = -1)
-        self.setMinimumSize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
+        self.resize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -151,6 +151,9 @@ class MainWindow(QMainWindow):
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
         self.ui.pages[1].tree.collapsed.connect(self.collapse_files)
+
+        # Albums tree signals:
+        self.ui.pages[0].tree.clicked.connect(self.show_files_for_date)
 
         # Stubs
         self.video_files_in_directory = None
@@ -206,6 +209,19 @@ class MainWindow(QMainWindow):
         self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
+
+    def show_files_for_date(self, signal):
+        r = signal.row()
+        c = signal.column()
+        p = signal.parent()
+        rr = self.ui.pages[0].tree_model.index(r, c+1, p)
+        date = self.ui.pages[0].tree_model.itemFromIndex(rr).text()
+        date = date.split()
+        if len(date) == 3:
+            field = date[0]
+            year = int(date[1])
+            month = int(date[2])
+            self.update_layout(self.ui.pages[0].files_list_model, set_filter=f"strftime('%Y', {field})='{year}' AND strftime('%m', {field})='{month:02d}'")
 
     def collapse_files(self, idx):
         # Import tool button
