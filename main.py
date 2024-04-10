@@ -18,7 +18,8 @@ from models.files import FilesModel
 
 import qdarktheme
 
-from workers.video_import_worker import VideoImportWorker
+from workers.metadata_parser import MetadataWorker
+from workers.video_import import VideoImportWorker
 
 
 class MainWindowUI:
@@ -160,8 +161,8 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.threadpool = QThreadPool()
-        # self.threadpool.setMaxThreadCount(1)
-        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+        self.gpu_threadpool = QThreadPool()
+        self.gpu_threadpool.setMaxThreadCount(1)
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
@@ -175,19 +176,26 @@ class MainWindow(QMainWindow):
         FilesModel.update_fields(id, metadata)
         self.update_layout(self.ui.pages[1].files_list_model)
 
-    def thread_complete(self):
-        print("THREAD COMPLETE!")
+    def metadata_thread_complete(self, id:int):
+        print('complete id', id)
+        if 0:
+            fname = FilesModel.select_file_path(id)
+            worker = VideoImportWorker(id=id,
+                                    video_file_path=fname,
+                                    )
+            worker.signals.result.connect(self.print_output)
+            worker.signals.finished.connect(self.thread_complete)
+            worker.signals.progress.connect(self.progress_fn)
+            self.gpu_threadpool.start(worker)
 
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports():
             fname = FilesModel.select_file_path(id)
-            worker = VideoImportWorker(id=id,
-                                       video_file_path=fname,
-                                       progress_callback=self.progress_fn,
-                                       metadata_callback=self.update_metadata
-                                       )
+            worker = MetadataWorker(id=id,
+                                   video_file_path=fname
+                                   )
             worker.signals.result.connect(self.print_output)
-            worker.signals.finished.connect(self.thread_complete)
+            worker.signals.finished.connect(self.metadata_thread_complete)
             worker.signals.progress.connect(self.progress_fn)
             worker.signals.metadata_result.connect(self.update_metadata)
             self.threadpool.start(worker)

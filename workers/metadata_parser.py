@@ -3,40 +3,15 @@ import datetime as dt
 import subprocess as sp
 import json
 import sys
-import traceback, sys
+import traceback
 
+import cv2
 from PyQt5.QtCore import *
-from PyQt5.QtSql import QSqlDatabase
 
-from models.files import FilesModel
+from workers.worker_signals import WorkerSignals
 
 
-class VideoImportWorkerSignals(QObject):
-    '''
-    Defines the signals available from a running worker thread.
-
-    Supported signals are:
-
-    finished
-        No data
-
-    error
-        tuple (exctype, value, traceback.format_exc() )
-
-    result
-        object data returned from processing, anything
-
-    progress
-        float indicating % progress
-
-    '''
-    finished = pyqtSignal()
-    error = pyqtSignal(tuple)
-    result = pyqtSignal(object)
-    progress = pyqtSignal(int, float)
-    metadata_result = pyqtSignal(int, object)
-
-class VideoImportWorker(QRunnable):
+class MetadataWorker(QRunnable):
     '''
     Worker thread
 
@@ -51,38 +26,30 @@ class VideoImportWorker(QRunnable):
     '''
 
     def __init__(self, *args, **kwargs):
-        super(VideoImportWorker, self).__init__()
+        super(MetadataWorker, self).__init__()
 
         self.args = args
         self.kwargs = kwargs
-        self.signals = VideoImportWorkerSignals()
-
-        # Add the callback to our kwargs
-        self.kwargs['progress_callback'] = self.signals.progress
-        self.kwargs['metadata_callback'] = self.signals.metadata_result
+        self.signals = WorkerSignals()
 
         self.id = kwargs['id']
         self.fname = self.kwargs['video_file_path']
         self.duration = 0.
 
+
     @pyqtSlot()
     def run(self):
         try:
-            metadata = self.parse_metadata(*self.args, **self.kwargs)
-            self.kwargs['metadata_callback'].emit(self.id, metadata)
-            self.kwargs['progress_callback'].emit(self.id, 10.0)
-            scenes = self.split_by_scenes(*self.args, **self.kwargs)
+            self.metadata = self.parse_metadata(*self.args, **self.kwargs)
+            self.signals.progress.emit(self.id, 10.0)
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            pass #self.signals.result.emit(result)
+            self.signals.metadata_result.emit(self.id, self.metadata)
         finally:
-            self.signals.finished.emit()
-
-    def split_by_scenes(self, *args, **kwargs):
-        self.fname
+            self.signals.finished.emit(self.id)
 
     def parse_metadata(self, *args, **kwargs):
             bitrate = 0.0
