@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView,
 from PyQt5.QtCore import Qt, QSize
 
 from models.files import FilesModel
+from models.scenes import SceneModel
 
 
 class FilesUI:
@@ -11,6 +12,7 @@ class FilesUI:
         self.tree = QTreeView()
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel()
+        self.scenes_list_model = SceneModel()
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         widget_container = QWidget()

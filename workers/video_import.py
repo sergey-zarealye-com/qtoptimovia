@@ -1,41 +1,21 @@
-import os
 import datetime as dt
-import subprocess as sp
 import json
+import os
+import subprocess as sp
 import sys
-import traceback, sys
+import traceback
+import torch
+import clip
+from PIL import Image
+import numpy as np
 
 import cv2
 from PyQt5.QtCore import *
 from PyQt5.QtSql import QSqlDatabase
 
 from models.files import FilesModel
+from workers.worker_signals import WorkerSignals
 
-
-class VideoImportWorkerSignals(QObject):
-    '''
-    Defines the signals available from a running worker thread.
-
-    Supported signals are:
-
-    finished
-        No data
-
-    error
-        tuple (exctype, value, traceback.format_exc() )
-
-    result
-        object data returned from processing, anything
-
-    progress
-        float indicating % progress
-
-    '''
-    finished = pyqtSignal()
-    error = pyqtSignal(tuple)
-    result = pyqtSignal(object)
-    progress = pyqtSignal(int, float)
-    metadata_result = pyqtSignal(int, object)
 
 class VideoImportWorker(QRunnable):
     '''
@@ -56,139 +36,154 @@ class VideoImportWorker(QRunnable):
 
         self.args = args
         self.kwargs = kwargs
-        self.signals = VideoImportWorkerSignals()
-
-        # Add the callback to our kwargs
-        self.kwargs['progress_callback'] = self.signals.progress
-        self.kwargs['metadata_callback'] = self.signals.metadata_result
+        self.signals = WorkerSignals()
 
         self.id = kwargs['id']
-        self.fname = self.kwargs['video_file_path']
-        self.duration = 0.
+        self.fname = kwargs['video_file_path']
+        self.metadata = kwargs['metadata']
+        self.duration = self.metadata['duration']
 
         BUFFSIZE = 10
-        STEP_MSEC = 320
-        MAXTIME = 60000
-        STEP_FRAMES = 8
-        MAXFRAME = 1000
+        STEP_MSEC = 320 // 2
+        MAXTIME = 60000000
+        STEP_FRAMES = 8 // 2
+        MAXFRAME = 100000
         self.BUFFSIZE = BUFFSIZE
         self.STEP_MSEC = STEP_MSEC
         self.MAXTIME = MAXTIME
         self.STEP_FRAMES = STEP_FRAMES
         self.MAXFRAME = MAXFRAME
 
+        # https://en.wikipedia.org/wiki/Finite_difference_coefficient
+        self.FILTR = np.array([35 / 12, -26 / 3, 19 / 2, -14 / 3, 11 / 12])  # forward
+        # self.FILTR = np.array([-11/12, 14/3, -19/2, 26/3, -35/12]) #backward
+        # self.FILTR = np.array([-1/12,	4/3,	-5/2,	4/3,	-1/12]) #central
+        self.NFILTR = len(self.FILTR)
+        self.THRESHOLD = 0.5
+        self.STD_WINDOW = 10
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
+
     @pyqtSlot()
     def run(self):
         try:
-            self.metadata = self.parse_metadata(*self.args, **self.kwargs)
-            self.kwargs['metadata_callback'].emit(self.id, self.metadata)
-            self.kwargs['progress_callback'].emit(self.id, 10.0)
-            scenes = self.split_by_scenes(*self.args, **self.kwargs)
+            self.scenes = self.split_by_scenes(*self.args, **self.kwargs)
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            pass #self.signals.result.emit(result)
+            self.signals.result.emit(self.id, self.scenes)
         finally:
-            self.signals.finished.emit()
+            self.signals.finished.emit(self.id, self.scenes)
+            self.signals.progress.emit(self.id, 100.)
+
+    def tiling(self):
+        w = self.metadata['width']
+        h = self.metadata['height']
+        if w > h:
+            x1 = (w - h) // 2
+            x2 = w - h
+            return (0, 0, h, h), (x1, 0, x1 + h, h), (x2, 0, x2 + h, h)
+        elif h > w:
+            y1 = (h - w) // 2
+            y2 = h - w
+            return (0, 0, w, w), (0, y1, w, y1 + w), (0, y2, w, y2 + w)
+        else:
+            return (0, 0, w, w)
 
     def split_by_scenes(self, *args, **kwargs):
-        for pos_list, buff in self.frame_iterator():
-            pos_sec = pos_list[-1]['pos_sec']
-            progress = pos_sec / self.duration * 90
-            self.kwargs['progress_callback'].emit(self.id, progress)
-
-    def parse_metadata(self, *args, **kwargs):
-            bitrate = 0.0
-            """
-            Ищет в выходных данных ffprobe такие строки и парсит из них мета-данные фильма:        
-            Stream #0:0: Video: mpeg4 (Advanced Simple Profile) (XVID / 0x44495658), yuv420p, 720x400 [SAR 1:1 DAR 9:5], 1976 kb/s, 25 fps, 25 tbr, 25 tbn, 25 tb
-            Stream #0:0: Video: rawvideo (UYVY / 0x59565955), uyvy422, 720x576, 172800 kb/s, 25 fps, 25 tbr, 25 tbn, 25 tbc
-            Stream #0:0(und): Video: h264 (High) (avc1 / 0x31637661), yuv420p, 1280x676 [SAR 1:1 DAR 320:169], 1959 kb/s, 25 fps, 25 tbr, 25 tbn, 50 tbc (default)
-            """
-            if sys.platform == 'win32':
-                FFPROBE = "ffmpeg/bin/ffprobe -v quiet -print_format json -show_format -show_streams"
-            else:
-                FFPROBE = "ffprobe -v quiet -print_format json -show_format -show_streams"
-
-            command = FFPROBE.split() + [self.fname]
-            pipe = sp.Popen(command, stdout=sp.PIPE, stderr=sp.PIPE,
-                            cwd=os.path.dirname(os.path.realpath(__file__)))
-            pipe.stdout.readline()
-            infos = pipe.stdout.read().decode("utf-8")
-            parsed = json.loads("{" + infos)
-            creation_time = None
-            aac_rate = 0
-            audio_depth = 0
-            audio_channels = 0
-            if not (u'streams' in parsed):
-                raise Exception("File seems not to contain any video.")
-            for stream in parsed[u'streams']:
-                if stream[u'codec_type'] == 'audio':
-                    aac_rate = stream[u'bit_rate']
-                    audio_channels = stream[u'channels']
-                if stream[u'codec_type'] == 'video':
-                    rot = 0
-                    if u'tags' in stream:
-                        if u'rotate' in stream[u'tags']:
-                            rot = int(stream[u'tags'][u'rotate'])
-                        if u'creation_time' in stream[u'tags']:
-                            creation_time = stream[u'tags'][u'creation_time']
-                    if rot == 0:
-                        w = int(stream[u'width'])
-                        h = int(stream[u'height'])
-                    elif rot == 180 or rot == -180:
-                        w = int(stream[u'width'])
-                        h = int(stream[u'height'])
-                    elif rot == 90 or rot == -90:
-                        h = int(stream[u'width'])
-                        w = int(stream[u'height'])
-                    elif rot == 270 or rot == -270:
-                        h = int(stream[u'width'])
-                        w = int(stream[u'height'])
+        # TODO have minimal scene length, join such a short scenes
+        scenes = {}
+        prev_image_features = None
+        mean_image_features = None
+        delta = 0.
+        scene_start = 0.
+        current_pos = 0.
+        scene_frames_count = 0
+        resp = 0.
+        deltas = []
+        responces = []
+        now_triggered = False
+        with torch.no_grad():
+            # with open(os.path.join('data',
+            #                        os.path.basename(self.fname) + '.txt'), 'w') as out:
+            for pos_list, buff in self.frame_iterator():
+                for idx in range(len(buff)):
+                    current_pos = pos_list[idx]['pos_sec']
+                    image_features = None
+                    for t in self.tiling():
+                        tile = self.clip_preprocess(Image.fromarray(buff[idx][t[1]:t[3], t[0]:t[2]])) \
+                            .unsqueeze(0).to(self.device)
+                        tile_features = self.clip_model.encode_image(tile)
+                        if image_features is None:
+                            image_features = tile_features.detach().clone()
+                        else:
+                            image_features += tile_features
+                    norm = torch.linalg.vector_norm(image_features) * len(self.tiling())
+                    image_features /= norm
+                    if prev_image_features is None:
+                        mean_image_features = image_features.detach().clone()
+                        scene_frames_count = 1
                     else:
-                        raise Exception('Unknown rotation angle')
-                    if u'bit_rate' in stream:
-                        bitrate = int(stream[u'bit_rate']) / 1000
-                    else:
-                        bitrate = int(parsed[u'format'][u'bit_rate']) / 1000
-                    fps_n, fps_d = stream[u'r_frame_rate'].split('/')
-                    fps = float(fps_n) / float(fps_d)
-                    if u'sample_aspect_ratio' in stream:
-                        sar = tuple([int(o) for o in stream[u'sample_aspect_ratio'].split(':')])
-                        if sar[0] == 0 or sar[1] == 0:
-                            sar = (1, 1)
-                    else:
-                        sar = (1, 1)
-                    if u'display_aspect_ratio' in stream:
-                        dar = tuple([int(o) for o in stream[u'display_aspect_ratio'].split(':')])
-                    else:
-                        dar = (1, 1)
-                    start = float(stream[u'start_time'])
-                    self.duration = float(stream[u'duration'])
+                        mean_image_features += image_features
+                        scene_frames_count += 1
+                        delta = torch.linalg.vector_norm(prev_image_features - image_features)
+                        deltas.append(delta)
+                        if len(deltas) >= self.NFILTR:
+                            resp = np.dot(np.array(deltas[-self.NFILTR:]), self.FILTR)
+                            responces.append(abs(resp))
+                        if len(responces) >= self.STD_WINDOW:
+                            self.THRESHOLD = 3 * np.array(responces).std()
+                        if abs(resp) >= self.THRESHOLD and not now_triggered:
+                            scene_end = current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000
+                            emb = mean_image_features.cpu().numpy() / scene_frames_count
+                            self.signals.partial_result.emit(self.id,
+                                                             dict(
+                                                                 scene_start=scene_start,
+                                                                 scene_end=scene_end,
+                                                                 scene_embedding=QByteArray(emb.tobytes())
+                                                             )
+                                                             )
+                            scene_start = scene_end
+                            scene_frames_count = 0
+                            mean_image_features *= 0
+                        now_triggered = abs(resp) >= self.THRESHOLD
 
-            aspect = float(sar[0]) / float(sar[1])
-            data = dict(fps=fps, created_at=creation_time, duration=self.duration,
-                        width=w, height=h, audio_depth=audio_depth, aac_rate=aac_rate, audio_channels=audio_channels,
-                        aspect=aspect, rot=rot, sar=sar, dar=dar, start=start, bitrate=bitrate)
-            return data
+                        # out.write("%f %f %f %f %d\n" % (pos_list[idx]['pos_sec'], delta, abs(resp), self.THRESHOLD, int(now_triggered)))
 
-            # ==============================================================================
-            #     Итератор по фильму позволяет получать кадры, упакованные в мини-батчи.
-            #     Входные данные:
-            #     -    fname - путь к файлу видео.
-            #     -    scene_cuts (опционально) - список границ сцен в миллисекундах.
-            #           Если он задан, мини-батчи формируются с учетом этого,
-            #           т.е. в мини-батч попадают только кадры из одной сцены,
-            #           не более CUT_MAX_FRAMES.
-            #     -    CUT_MAX_FRAMES не должен быть больше 10 (ограничение реализации
-            #           GoogLeNet) игнорируется если scene_cuts не задан!
-            #     -    STEP_MSEC - интервал выбороки кадров из фильма в миллисекундах
-            #     -    MAXTIME - предел длительности фильма в миллисекундах;
-            #           0 - нет предела (весь фильм)
-            #     -    BUFFSIZE - максимальный размер минибатча
-            # ==============================================================================
+                    prev_image_features = image_features.detach().clone()
+
+                pos_sec = pos_list[-1]['pos_sec']
+                progress = min(100., 10 + pos_sec / self.duration * 90)
+                self.signals.progress.emit(self.id, progress)
+            if scene_frames_count > 0:
+                emb = mean_image_features.cpu().numpy() / scene_frames_count
+                self.signals.partial_result.emit(self.id,
+                                                 dict(
+                                                     scene_start=scene_start,
+                                                     scene_end=current_pos,
+                                                     scene_embedding=QByteArray(emb.tobytes())
+                                                 )
+                                                 )
+        return scenes
+
+        # ==============================================================================
+        #     Итератор по фильму позволяет получать кадры, упакованные в мини-батчи.
+        #     Входные данные:
+        #     -    fname - путь к файлу видео.
+        #     -    scene_cuts (опционально) - список границ сцен в миллисекундах.
+        #           Если он задан, мини-батчи формируются с учетом этого,
+        #           т.е. в мини-батч попадают только кадры из одной сцены,
+        #           не более CUT_MAX_FRAMES.
+        #     -    CUT_MAX_FRAMES не должен быть больше 10 (ограничение реализации
+        #           GoogLeNet) игнорируется если scene_cuts не задан!
+        #     -    STEP_MSEC - интервал выбороки кадров из фильма в миллисекундах
+        #     -    MAXTIME - предел длительности фильма в миллисекундах;
+        #           0 - нет предела (весь фильм)
+        #     -    BUFFSIZE - максимальный размер минибатча
+        # ==============================================================================
 
     def frame_iterator(self, scene_cuts=None, CUT_MAX_FRAMES=10, is_ravnomerno=False):
         buff_cnt = 0

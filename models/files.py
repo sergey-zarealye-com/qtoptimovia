@@ -21,10 +21,11 @@ class FilesModel(QAbstractTableModel):
         self.fs_model.setRootPath(QDir.currentPath())
         self.fs_model.setNameFilters(FilesModel.FILE_FILTERS)
         self.fs_model.setNameFilterDisables(False)
+        self.table_name = "video_files"
         self.fields = self.setup_db()
         self.selected_dir = None
         self.db_model = QSqlTableModel()
-        self.db_model.setTable("video_files")
+        self.db_model.setTable(self.table_name)
         self.db_model.setEditStrategy(QSqlTableModel.OnFieldChange)
 
     def data(self, index, role):
@@ -77,8 +78,8 @@ class FilesModel(QAbstractTableModel):
     def setup_db(self):
         create_table_query = QSqlQuery()
         create_table_query.exec(
-            """
-            CREATE TABLE IF NOT EXISTS video_files (
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.table_name} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 import_name VARCHAR NOT NULL,
                 import_dir VARCHAR NOT NULL,
@@ -108,14 +109,14 @@ class FilesModel(QAbstractTableModel):
         )
         create_idx_query1 = QSqlQuery()
         create_idx_query1.exec(
-            """
-            CREATE INDEX IF NOT EXISTS idx_video_files_import_dir ON video_files(import_dir)
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_{self.table_name}_import_dir ON {self.table_name}(import_dir)
             """
         )
         create_idx_query2 = QSqlQuery()
         create_idx_query2.exec(
-            """
-            CREATE INDEX IF NOT EXISTS idx_video_files_import_name ON video_files(import_name)
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_{self.table_name}_import_name ON {self.table_name}(import_name)
             """
         )
         return ['id' ,

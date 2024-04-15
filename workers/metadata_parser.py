@@ -49,7 +49,7 @@ class MetadataWorker(QRunnable):
         else:
             self.signals.metadata_result.emit(self.id, self.metadata)
         finally:
-            self.signals.finished.emit(self.id)
+            self.signals.finished.emit(self.id, self.metadata)
 
     def parse_metadata(self, *args, **kwargs):
             bitrate = 0.0
@@ -85,6 +85,7 @@ class MetadataWorker(QRunnable):
                     if u'tags' in stream:
                         if u'rotate' in stream[u'tags']:
                             rot = int(stream[u'tags'][u'rotate'])
+                        # TODO empty creation dates in video4 folder
                         if u'creation_time' in stream[u'tags']:
                             creation_time = stream[u'tags'][u'creation_time']
                     if rot == 0:

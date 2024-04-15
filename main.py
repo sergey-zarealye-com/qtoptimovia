@@ -9,6 +9,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
 from PyQt5.QtSql import QSqlDatabase
 
+from models.scenes import SceneModel
 from ui.albums_ui import AlbumsUI
 from ui.files_ui import FilesUI
 from ui.archive_ui import ArchiveUI
@@ -166,7 +167,6 @@ class MainWindow(QMainWindow):
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
-        print("%.2f%% done" % progress)
         self.update_layout(self.ui.pages[1].files_list_model)
 
     def print_output(self, s):
@@ -176,17 +176,26 @@ class MainWindow(QMainWindow):
         FilesModel.update_fields(id, metadata)
         self.update_layout(self.ui.pages[1].files_list_model)
 
-    def metadata_thread_complete(self, id:int):
-        print('complete id', id)
-        if 0:
-            fname = FilesModel.select_file_path(id)
-            worker = VideoImportWorker(id=id,
-                                    video_file_path=fname,
-                                    )
-            worker.signals.result.connect(self.print_output)
-            worker.signals.finished.connect(self.thread_complete)
-            worker.signals.progress.connect(self.progress_fn)
-            self.gpu_threadpool.start(worker)
+    def insert_scene(self, video_file_id:int, obj:dict):
+        scene_start = obj['scene_start']
+        scene_end = obj['scene_end']
+        scene_embedding = obj['scene_embedding']
+        scene_id = SceneModel.insert(video_file_id, scene_start, scene_end, scene_embedding)
+
+    def metadata_thread_complete(self, id:int, metadata:dict):
+        fname = FilesModel.select_file_path(id)
+        worker = VideoImportWorker(id=id,
+                                   video_file_path=fname,
+                                   metadata=metadata,
+                                )
+        worker.signals.result.connect(self.print_output)
+        worker.signals.finished.connect(self.import_thread_complete)
+        worker.signals.progress.connect(self.progress_fn)
+        worker.signals.partial_result.connect(self.insert_scene)
+        self.gpu_threadpool.start(worker)
+
+    def import_thread_complete(self, id: int):
+        print('finished import id:', id)
 
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports():

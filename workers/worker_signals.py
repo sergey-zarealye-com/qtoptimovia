@@ -20,8 +20,9 @@ class WorkerSignals(QObject):
         float indicating % progress
 
     '''
-    finished = pyqtSignal(int)
+    finished = pyqtSignal(int, object)
     error = pyqtSignal(tuple)
-    result = pyqtSignal(object)
+    result = pyqtSignal(int, object)
+    partial_result = pyqtSignal(int, object)
     progress = pyqtSignal(int, float)
     metadata_result = pyqtSignal(int, object)

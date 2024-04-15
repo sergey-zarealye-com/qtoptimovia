@@ -41,6 +41,8 @@ class AlbumsModel(QStandardItemModel):
         while select_query.next():
             year = select_query.value(0)
             month = select_query.value(1)
+            if year is None or month is None or len(year) == 0 or len(month) == 0:
+                continue
             month_name = calendar.month_name[int(month)]
             out[year][month_name] = "%s %s %s" %(field, year, int(month))
         return out
