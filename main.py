@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
     QLabel, QToolBar, QStatusBar, QDesktopWidget,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
     QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox)
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
 from PyQt5.QtSql import QSqlDatabase
 
@@ -163,9 +163,12 @@ class MainWindow(QMainWindow):
         self.video_files_in_directory = None
 
         # Workers
-        self.threadpool = QThreadPool()
+        self.ffmpeg_threadpool = QThreadPool()
+        self.ffmpeg_threadpool.setMaxThreadCount(4)
         self.gpu_threadpool = QThreadPool()
         self.gpu_threadpool.setMaxThreadCount(1)
+
+        self.ui.pages[0].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
@@ -209,18 +212,22 @@ class MainWindow(QMainWindow):
             worker.signals.finished.connect(self.metadata_thread_complete)
             worker.signals.progress.connect(self.progress_fn)
             worker.signals.metadata_result.connect(self.update_metadata)
-            self.threadpool.start(worker)
+            self.ffmpeg_threadpool.start(worker)
 
     def update_layout(self, model, set_filter=None):
+        print(1111, set_filter)
         if set_filter != None:
             model.db_model.setFilter(set_filter)
         model.db_model.select()
+        print(22222)
         model.layoutChanged.emit()
+        print(3333)
 
     def show_scenes(self, signal):
         video_file_id_idx = signal.siblingAtColumn(0)
         video_file_id = signal.model().db_model.data(video_file_id_idx)
         page = signal.model().page
+        print('page', page, video_file_id)
         self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
 
     def import_video_files(self, signal):
@@ -274,6 +281,8 @@ if __name__ == "__main__":
     # Create the connection
     con = QSqlDatabase.addDatabase("QSQLITE")
     con.setDatabaseName("data/optimovia.db")
+
+    QPixmapCache.setCacheLimit(10240 * 128)
 
     app = QApplication(sys.argv)
     if sys.platform == 'darwin':

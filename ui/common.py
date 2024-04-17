@@ -15,7 +15,8 @@ class ProgressDelegate(QStyledItemDelegate):
         opt.progress = int(progress)
         QApplication.style().drawControl(QStyle.CE_ProgressBar, opt, painter)
 
-def files_list_view(view, model):
+
+def setup_files_list_view(view, model):
     view.setModel(model)
     view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -34,15 +35,17 @@ def files_list_view(view, model):
         if f not in FilesModel.COLUMNS:
             view.setColumnHidden(i, True)
 
-def scenes_view(view, model):
+
+def setup_scenes_view(view, model):
     view.setModel(model)
     view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     # QTableView Headers
     horizontal_header = view.horizontalHeader()
     vertical_header = view.verticalHeader()
-    horizontal_header.setSectionResizeMode(QHeaderView.Interactive)
     vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-    horizontal_header.setStretchLastSection(True)
+    horizontal_header.setStretchLastSection(False)
+    horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+    horizontal_header.hide()
     vertical_header.hide()
 
     for i, f in enumerate(model.fields):

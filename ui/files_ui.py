@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QSize
 
 from models.files import FilesModel
 from models.scenes import SceneModel
-from ui.common import scenes_view, files_list_view
+from ui.common import setup_scenes_view, setup_files_list_view
 
 
 class FilesUI:
@@ -14,7 +14,7 @@ class FilesUI:
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel(1)
         self.scenes_list_view = QTableView()
-        self.scenes_list_model = SceneModel()
+        self.scenes_list_model = SceneModel(self)
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         widget_container = QWidget()
@@ -27,12 +27,11 @@ class FilesUI:
             self.tree.setColumnWidth(0, 200)
         elif col == 1:
             layout.addWidget(QLabel('<h3>Imported videos</h3>'))
-            files_list_view(self.files_list_view, self.files_list_model)
-            self.files_list_view.setModel(self.files_list_model)
+            setup_files_list_view(self.files_list_view, self.files_list_model)
             layout.addWidget(self.files_list_view)
         elif col == 2:
             layout.addWidget(QLabel('<h3>Scenes</h3>'))
-            scenes_view(self.scenes_list_view, self.scenes_list_model)
+            setup_scenes_view(self.scenes_list_view, self.scenes_list_model)
             layout.addWidget(self.scenes_list_view)
 
         v_main_layout = QVBoxLayout(win)

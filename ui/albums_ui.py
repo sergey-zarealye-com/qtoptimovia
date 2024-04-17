@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QSizePolicy
 from models.albums import AlbumsModel
 from models.files import FilesModel
 from models.scenes import SceneModel
-from ui.common import scenes_view, files_list_view
+from ui.common import setup_scenes_view, setup_files_list_view
 
 
 class AlbumsUI:
@@ -14,7 +14,7 @@ class AlbumsUI:
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel(0)
         self.scenes_list_view = QTableView()
-        self.scenes_list_model = SceneModel()
+        self.scenes_list_model = SceneModel(self)
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
@@ -32,11 +32,11 @@ class AlbumsUI:
             self.tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
         elif col == 1:
             layout.addWidget(QLabel('<h3>Videos</h3>'))
-            files_list_view(self.files_list_view, self.files_list_model)
+            setup_files_list_view(self.files_list_view, self.files_list_model)
             layout.addWidget(self.files_list_view)
         elif col == 2:
             layout.addWidget(QLabel('<h3>Scenes</h3>'))
-            scenes_view(self.scenes_list_view, self.scenes_list_model)
+            setup_scenes_view(self.scenes_list_view, self.scenes_list_model)
             layout.addWidget(self.scenes_list_view)
 
         v_main_layout = QVBoxLayout(win)
