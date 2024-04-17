@@ -15,8 +15,9 @@ class FilesModel(QAbstractTableModel):
     ])
 
 
-    def __init__(self):
+    def __init__(self, page:int):
         super().__init__()
+        self.page = page
         self.fs_model = QFileSystemModel()
         self.fs_model.setRootPath(QDir.currentPath())
         self.fs_model.setNameFilters(FilesModel.FILE_FILTERS)

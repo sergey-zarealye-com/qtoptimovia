@@ -153,9 +153,11 @@ class MainWindow(QMainWindow):
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
         self.ui.pages[1].tree.collapsed.connect(self.collapse_files)
+        self.ui.pages[1].files_list_view.clicked.connect(self.show_scenes)
 
         # Albums tree signals:
         self.ui.pages[0].tree.clicked.connect(self.show_files_for_date)
+        self.ui.pages[0].files_list_view.clicked.connect(self.show_scenes)
 
         # Stubs
         self.video_files_in_directory = None
@@ -215,13 +217,19 @@ class MainWindow(QMainWindow):
         model.db_model.select()
         model.layoutChanged.emit()
 
-    def import_video_files(self, e):
+    def show_scenes(self, signal):
+        video_file_id_idx = signal.siblingAtColumn(0)
+        video_file_id = signal.model().db_model.data(video_file_id_idx)
+        page = signal.model().page
+        self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
+
+    def import_video_files(self, signal):
         ### TODO make slot to import selected files only, not just the full dir
         FilesModel.import_files(self.video_files_in_directory)
         self.update_layout(self.ui.pages[1].files_list_model)
 
-    def show_files_in_dir(self, idx):
-        dir_path = self.ui.pages[1].files_list_model.get_file_path(idx)
+    def show_files_in_dir(self, signal):
+        dir_path = self.ui.pages[1].files_list_model.get_file_path(signal)
         self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
         # Import tool button
@@ -240,7 +248,7 @@ class MainWindow(QMainWindow):
             month = int(date[2])
             self.update_layout(self.ui.pages[0].files_list_model, set_filter=f"strftime('%Y', {field})='{year}' AND strftime('%m', {field})='{month:02d}'")
 
-    def collapse_files(self, idx):
+    def collapse_files(self, signal):
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(False)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter='0')

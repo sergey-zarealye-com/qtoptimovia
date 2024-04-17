@@ -18,7 +18,30 @@ class SceneModel(QAbstractTableModel):
         self.fields = self.setup_db()
         self.db_model = QSqlTableModel()
         self.db_model.setTable(self.table_name)
-        self.db_model.setEditStrategy(QSqlTableModel.OnFieldChange)
+
+    def data(self, index, role):
+        row = index.row()
+        col= index.column()
+        if role == Qt.DisplayRole:
+            return self.db_model.data(self.db_model.index(row, col))
+
+    def rowCount(self, index):
+        if index.isValid():
+            0
+        else:
+            return self.db_model.rowCount()
+
+    def columnCount(self, index):
+        if index.isValid():
+            0
+        else:
+            return self.db_model.columnCount()
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if self.fields[section] in SceneModel.COLUMNS:
+                return SceneModel.COLUMNS[self.fields[section]]
+        return super().headerData(section, orientation, role)
 
     def setup_db(self):
         create_table_query = QSqlQuery()
