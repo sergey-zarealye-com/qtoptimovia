@@ -169,6 +169,7 @@ class MainWindow(QMainWindow):
         self.gpu_threadpool.setMaxThreadCount(1)
 
         self.ui.pages[0].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
+        self.ui.pages[1].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
@@ -215,19 +216,15 @@ class MainWindow(QMainWindow):
             self.ffmpeg_threadpool.start(worker)
 
     def update_layout(self, model, set_filter=None):
-        print(1111, set_filter)
         if set_filter != None:
             model.db_model.setFilter(set_filter)
         model.db_model.select()
-        print(22222)
         model.layoutChanged.emit()
-        print(3333)
 
     def show_scenes(self, signal):
         video_file_id_idx = signal.siblingAtColumn(0)
         video_file_id = signal.model().db_model.data(video_file_id_idx)
         page = signal.model().page
-        print('page', page, video_file_id)
         self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
 
     def import_video_files(self, signal):

@@ -16,7 +16,8 @@ class SceneModel(QAbstractTableModel):
         ("thumbnail2", "2"),
         ("thumbnail3", "3"),
     ])
-    THUMB_HEIGHT = 128
+    THUMB_HEIGHT = 196
+    THUMB_WIDTH = 160
 
     def __init__(self, ui):
         super().__init__()
@@ -80,13 +81,12 @@ class SceneModel(QAbstractTableModel):
 
     def frame_extracted(self, id, obj):
         frm = obj['frame']
-        # frm = np.ascontiguousarray(frm)
-        print(obj['cache_key'], frm.shape)
-        im = QImage(QByteArray(frm.tobytes()),
-                             frm.shape[1], frm.shape[0],
-                            QImage.Format_RGB888)
-        im = im.scaledToHeight(self.THUMB_HEIGHT)
-        print(im.size())
+        h, w = frm.shape[:2]
+        im = QImage(QByteArray(frm.tobytes()), w, h, QImage.Format_RGB888)
+        if h > w:
+            im = im.scaledToHeight(self.THUMB_HEIGHT)
+        else:
+            im = im.scaledToWidth(self.THUMB_WIDTH)
         pix = QPixmap.fromImage(im)
         QPixmapCache.insert(obj['cache_key'], pix)
         self.ui.scenes_list_model.layoutChanged.emit()
