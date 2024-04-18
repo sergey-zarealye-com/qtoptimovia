@@ -75,7 +75,6 @@ class VideoImportWorker(QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.result.emit(self.id, self.scenes)
-        finally:
             self.signals.finished.emit(self.id, self.scenes)
             self.signals.progress.emit(self.id, 100.)
             # TODO update albums tree view after the import is completed
@@ -131,7 +130,7 @@ class VideoImportWorker(QRunnable):
                         mean_image_features += image_features
                         scene_frames_count += 1
                         delta = torch.linalg.vector_norm(prev_image_features - image_features)
-                        deltas.append(delta)
+                        deltas.append(delta.cpu())
                         if len(deltas) >= self.NFILTR:
                             resp = np.dot(np.array(deltas[-self.NFILTR:]), self.FILTR)
                             responces.append(abs(resp))

@@ -285,10 +285,10 @@ if __name__ == "__main__":
     QPixmapCache.setCacheLimit(10240 * 128)
 
     app = QApplication(sys.argv)
-    if sys.platform == 'darwin':
-        app.setStyle("Fusion")
-    else:
-        qdarktheme.setup_theme('auto')
+    # if sys.platform == 'darwin':
+    #     app.setStyle("Fusion")
+    # else:
+    #     qdarktheme.setup_theme('auto')
 
     # Try to open the connection and handle possible errors
     if not con.open():
@@ -300,12 +300,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     w = MainWindow()
-    w.setDocumentMode(True)
-    w.show()
+    
+    # w.setDocumentMode(True)
+    # w.show()
     
 
-    # qtmodern.styles.light(app)
-    # mw = qtmodern.windows.ModernWindow(w)
-    # mw.show()
+    qtmodern.styles.light(app)
+    mw = qtmodern.windows.ModernWindow(w)
+    mw.show()
 
     app.exec()
