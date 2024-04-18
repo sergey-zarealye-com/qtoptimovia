@@ -113,14 +113,13 @@ class VideoImportWorker(QRunnable):
                 for idx in range(len(buff)):
                     current_pos = pos_list[idx]['pos_sec']
                     image_features = None
+                    mbatch = []
                     for t in self.tiling():
-                        tile = self.clip_preprocess(Image.fromarray(buff[idx][t[1]:t[3], t[0]:t[2]])) \
-                            .unsqueeze(0).to(self.device)
-                        tile_features = self.clip_model.encode_image(tile)
-                        if image_features is None:
-                            image_features = tile_features.detach().clone()
-                        else:
-                            image_features += tile_features
+                        tile = self.clip_preprocess(Image.fromarray(buff[idx][t[1]:t[3], t[0]:t[2]])).unsqueeze(0).to(self.device)
+                        mbatch.append(tile)
+                    mbatch = torch.cat(mbatch, 0)
+                    mbatch_features = self.clip_model.encode_image(mbatch)
+                    image_features = mbatch_features.sum(axis=0)
                     norm = torch.linalg.vector_norm(image_features) * len(self.tiling())
                     image_features /= norm
                     if prev_image_features is None:

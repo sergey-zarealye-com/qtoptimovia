@@ -167,9 +167,9 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.ffmpeg_threadpool = QThreadPool()
-        self.ffmpeg_threadpool.setMaxThreadCount(4)
+        self.ffmpeg_threadpool.setMaxThreadCount(4) #4
         self.gpu_threadpool = QThreadPool()
-        self.gpu_threadpool.setMaxThreadCount(1)
+        self.gpu_threadpool.setMaxThreadCount(1) #1
 
         self.ui.pages[0].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
         self.ui.pages[1].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     w = MainWindow()
-    
+
     # w.setDocumentMode(True)
     # w.show()
     
