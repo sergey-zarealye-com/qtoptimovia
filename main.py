@@ -19,6 +19,9 @@ from models.files import FilesModel
 
 import qdarktheme
 
+import qtmodern.styles
+import qtmodern.windows
+
 from workers.metadata_parser import MetadataWorker
 from workers.video_import import VideoImportWorker
 
@@ -285,4 +288,10 @@ if __name__ == "__main__":
     w = MainWindow()
     w.setDocumentMode(True)
     w.show()
+    
+
+    # qtmodern.styles.light(app)
+    # mw = qtmodern.windows.ModernWindow(w)
+    # mw.show()
+
     app.exec()

@@ -156,7 +156,7 @@ class FilesModel(QAbstractTableModel):
         ]
 
     @staticmethod
-    def import_files(flist: list[str]):
+    def import_files(flist: list):
         select_query = QSqlQuery()
         select_query.prepare("SELECT id from video_files where import_dir=? AND import_name=?")
         insert_query = QSqlQuery()
