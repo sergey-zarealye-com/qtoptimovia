@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
     QLabel, QToolBar, QStatusBar, QDesktopWidget,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
-    QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox)
+    QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox, QProgressBar)
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
 from PyQt5.QtSql import QSqlDatabase
@@ -26,6 +26,9 @@ from workers.video_import import VideoImportWorker
 class MainWindowUI:
 
     def __init__(self, main_win: QMainWindow):
+
+        self.main_win = main_win
+
         # Actions
         sep1 = QAction()
         sep1.setSeparator(True)
@@ -53,7 +56,7 @@ class MainWindowUI:
         self.toolbar = QToolBar("Toolbar")
 
         sidebar = QToolBar("Sidebar")
-        statusbar = QStatusBar()
+        self.statusbar = QStatusBar()
         menubar = QMenuBar()
         tool_btn_settings = QToolButton()
 
@@ -126,11 +129,26 @@ class MainWindowUI:
         content_widget.setLayout(content_layout)
         self.central_window.setCentralWidget(content_widget)
 
+        self.ffmpeg_threads_pb = QProgressBar()
+        self.ffmpeg_threads_pb.setMinimum(0)
+        self.ffmpeg_threads_pb.setTextVisible(False)
+        self.ffmpeg_threads_pb.setFixedHeight(5)
+        self.ffmpeg_threads_pb.setFixedWidth(100)
+        self.statusbar.addWidget(self.ffmpeg_threads_pb)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_statusbar)
+        self.timer.start(500)
+
         main_win.setCentralWidget(self.central_window)
         main_win.addToolBar(Qt.ToolBarArea.LeftToolBarArea, sidebar)
         main_win.setMenuBar(menubar)
-        main_win.setStatusBar(statusbar)
+        main_win.setStatusBar(self.statusbar)
 
+    def update_statusbar(self):
+        self.ffmpeg_threads_pb.setMaximum(self.main_win.ffmpeg_threadpool.maxThreadCount())
+        cnt = self.main_win.ffmpeg_threadpool.activeThreadCount()
+        self.ffmpeg_threads_pb.setValue(cnt)
 
 class MainWindow(QMainWindow):
 
@@ -236,6 +254,7 @@ class MainWindow(QMainWindow):
         dir_path = self.ui.pages[1].files_list_model.get_file_path(signal)
         self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
+        self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
 
@@ -251,11 +270,13 @@ class MainWindow(QMainWindow):
             year = int(date[1])
             month = int(date[2])
             self.update_layout(self.ui.pages[0].files_list_model, set_filter=f"strftime('%Y', {field})='{year}' AND strftime('%m', {field})='{month:02d}'")
+            self.update_layout(self.ui.pages[0].scenes_list_model, set_filter="0")
 
     def collapse_files(self, signal):
         # Import tool button
         self.ui.actions_toolbar[0].setEnabled(False)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter='0')
+        self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
 
     def change_page(self) -> None:
         action_name = self.sender().text()  # type: ignore
