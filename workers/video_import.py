@@ -75,7 +75,6 @@ class VideoImportWorker(QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.result.emit(self.id, self.scenes)
-        finally:
             self.signals.finished.emit(self.id, self.scenes)
             self.signals.progress.emit(self.id, 100.)
             # TODO update albums tree view after the import is completed
@@ -114,14 +113,13 @@ class VideoImportWorker(QRunnable):
                 for idx in range(len(buff)):
                     current_pos = pos_list[idx]['pos_sec']
                     image_features = None
+                    mbatch = []
                     for t in self.tiling():
-                        tile = self.clip_preprocess(Image.fromarray(buff[idx][t[1]:t[3], t[0]:t[2]])) \
-                            .unsqueeze(0).to(self.device)
-                        tile_features = self.clip_model.encode_image(tile)
-                        if image_features is None:
-                            image_features = tile_features.detach().clone()
-                        else:
-                            image_features += tile_features
+                        tile = self.clip_preprocess(Image.fromarray(buff[idx][t[1]:t[3], t[0]:t[2]])).unsqueeze(0).to(self.device)
+                        mbatch.append(tile)
+                    mbatch = torch.cat(mbatch, 0)
+                    mbatch_features = self.clip_model.encode_image(mbatch)
+                    image_features = mbatch_features.sum(axis=0)
                     norm = torch.linalg.vector_norm(image_features) * len(self.tiling())
                     image_features /= norm
                     if prev_image_features is None:
@@ -131,7 +129,7 @@ class VideoImportWorker(QRunnable):
                         mean_image_features += image_features
                         scene_frames_count += 1
                         delta = torch.linalg.vector_norm(prev_image_features - image_features)
-                        deltas.append(delta)
+                        deltas.append(delta.cpu())
                         if len(deltas) >= self.NFILTR:
                             resp = np.dot(np.array(deltas[-self.NFILTR:]), self.FILTR)
                             responces.append(abs(resp))

@@ -19,6 +19,9 @@ from models.files import FilesModel
 
 import qdarktheme
 
+import qtmodern.styles
+import qtmodern.windows
+
 from workers.metadata_parser import MetadataWorker
 from workers.video_import import VideoImportWorker
 
@@ -182,9 +185,9 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.ffmpeg_threadpool = QThreadPool()
-        self.ffmpeg_threadpool.setMaxThreadCount(4)
+        self.ffmpeg_threadpool.setMaxThreadCount(4) #4
         self.gpu_threadpool = QThreadPool()
-        self.gpu_threadpool.setMaxThreadCount(1)
+        self.gpu_threadpool.setMaxThreadCount(1) #1
 
         self.ui.pages[0].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
         self.ui.pages[1].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
@@ -303,10 +306,10 @@ if __name__ == "__main__":
     QPixmapCache.setCacheLimit(10240 * 128)
 
     app = QApplication(sys.argv)
-    if sys.platform == 'darwin':
-        app.setStyle("Fusion")
-    else:
-        qdarktheme.setup_theme('auto')
+    # if sys.platform == 'darwin':
+    #     app.setStyle("Fusion")
+    # else:
+    #     qdarktheme.setup_theme('auto')
 
     # Try to open the connection and handle possible errors
     if not con.open():
@@ -318,6 +321,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     w = MainWindow()
-    w.setDocumentMode(True)
-    w.show()
+
+    # w.setDocumentMode(True)
+    # w.show()
+    
+
+    qtmodern.styles.light(app)
+    mw = qtmodern.windows.ModernWindow(w)
+    mw.show()
+
     app.exec()
