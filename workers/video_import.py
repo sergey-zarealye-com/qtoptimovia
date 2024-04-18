@@ -78,6 +78,7 @@ class VideoImportWorker(QRunnable):
         finally:
             self.signals.finished.emit(self.id, self.scenes)
             self.signals.progress.emit(self.id, 100.)
+            # TODO update albums tree view after the import is completed
 
     def tiling(self):
         w = self.metadata['width']
@@ -159,6 +160,7 @@ class VideoImportWorker(QRunnable):
                 progress = min(100., 10 + pos_sec / self.duration * 90)
                 self.signals.progress.emit(self.id, progress)
             if scene_frames_count > 0:
+                # TODO duration should be the last "scene_end"
                 emb = mean_image_features.cpu().numpy() / scene_frames_count
                 self.signals.partial_result.emit(self.id,
                                                  dict(

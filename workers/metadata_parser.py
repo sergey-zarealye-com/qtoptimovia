@@ -81,6 +81,7 @@ class MetadataWorker(QRunnable):
                     aac_rate = stream[u'bit_rate']
                     audio_channels = stream[u'channels']
                 if stream[u'codec_type'] == 'video':
+                    # TODO rot is always 0, check wooden bear metadata
                     rot = 0
                     if u'tags' in stream:
                         if u'rotate' in stream[u'tags']:
