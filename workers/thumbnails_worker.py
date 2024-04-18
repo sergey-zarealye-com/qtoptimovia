@@ -1,11 +1,7 @@
-import os
-import datetime as dt
-import subprocess as sp
-import json
+from time import time_ns as time
 import sys
 import traceback
 
-import cv2
 from PyQt5.QtCore import *
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
@@ -42,10 +38,12 @@ class ThumbnailsWorker(QRunnable):
 
     @pyqtSlot()
     def run(self):
+        t = 10000.
         try:
-            clip = VideoFileClip(self.fname)
-            self.frame = clip.get_frame(self.time_stamp)
-            clip.close()
+            with VideoFileClip(self.fname, resize_algorithm='neighbor') as clip:     #'fast_bilinear')
+                t0 = time()
+                self.frame = clip.get_frame(self.time_stamp)
+                t = time() - t0
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
@@ -53,5 +51,4 @@ class ThumbnailsWorker(QRunnable):
         else:
             self.signals.result.emit(self.id, dict(cache_key=self.cache_key, frame=self.frame))
         finally:
-            pass
-
+            self.signals.finished.emit(self.id, t)

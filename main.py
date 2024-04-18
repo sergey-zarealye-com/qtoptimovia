@@ -132,12 +132,21 @@ class MainWindowUI:
         content_widget.setLayout(content_layout)
         self.central_window.setCentralWidget(content_widget)
 
+        layout = QHBoxLayout()
+        sb_widget = QWidget()
+        sb_widget.setLayout(layout)
+
+        self.timeit_label = QLabel('Timeit:')
+
         self.ffmpeg_threads_pb = QProgressBar()
         self.ffmpeg_threads_pb.setMinimum(0)
         self.ffmpeg_threads_pb.setTextVisible(False)
         self.ffmpeg_threads_pb.setFixedHeight(5)
         self.ffmpeg_threads_pb.setFixedWidth(100)
-        self.statusbar.addWidget(self.ffmpeg_threads_pb)
+
+        layout.addWidget(self.ffmpeg_threads_pb)
+        layout.addWidget(self.timeit_label)
+        self.statusbar.addWidget(sb_widget)
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_statusbar)
@@ -152,6 +161,10 @@ class MainWindowUI:
         self.ffmpeg_threads_pb.setMaximum(self.main_win.ffmpeg_threadpool.maxThreadCount())
         cnt = self.main_win.ffmpeg_threadpool.activeThreadCount()
         self.ffmpeg_threads_pb.setValue(cnt)
+        if self.pages[0].scenes_list_model.timeit_cnt > 0:
+            mtime = self.pages[0].scenes_list_model.time_sum / self.pages[0].scenes_list_model.timeit_cnt
+            self.timeit_label.setText(f"Timeit: {mtime / 1e6:.2f}")
+
 
 class MainWindow(QMainWindow):
 
@@ -185,7 +198,7 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.ffmpeg_threadpool = QThreadPool()
-        self.ffmpeg_threadpool.setMaxThreadCount(4) #4
+        self.ffmpeg_threadpool.setMaxThreadCount(6) #4
         self.gpu_threadpool = QThreadPool()
         self.gpu_threadpool.setMaxThreadCount(1) #1
 
@@ -303,13 +316,14 @@ if __name__ == "__main__":
     con = QSqlDatabase.addDatabase("QSQLITE")
     con.setDatabaseName("data/optimovia.db")
 
-    QPixmapCache.setCacheLimit(10240 * 128)
+    QPixmapCache.setCacheLimit(2000 * 1024)
+
 
     app = QApplication(sys.argv)
-    # if sys.platform == 'darwin':
-    #     app.setStyle("Fusion")
-    # else:
-    #     qdarktheme.setup_theme('auto')
+    if sys.platform == 'darwin':
+        app.setStyle("Fusion")
+    else:
+        qdarktheme.setup_theme('auto')
 
     # Try to open the connection and handle possible errors
     if not con.open():
@@ -322,12 +336,12 @@ if __name__ == "__main__":
 
     w = MainWindow()
 
-    # w.setDocumentMode(True)
-    # w.show()
+    w.setDocumentMode(True)
+    w.show()
     
 
-    qtmodern.styles.light(app)
-    mw = qtmodern.windows.ModernWindow(w)
-    mw.show()
+    # qtmodern.styles.light(app)
+    # mw = qtmodern.windows.ModernWindow(w)
+    # mw.show()
 
     app.exec()

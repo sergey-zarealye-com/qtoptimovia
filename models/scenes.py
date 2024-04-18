@@ -27,6 +27,8 @@ class SceneModel(QAbstractTableModel):
         self.db_model.setTable(self.table_name)
         self.ffmpeg_threadpool = None
         self.ui = ui
+        self.time_sum = 0.
+        self.timeit_cnt = 0
 
     def data(self, index, role):
         if not index.isValid():
@@ -51,6 +53,7 @@ class SceneModel(QAbstractTableModel):
                                         )
                 worker.signals.error.connect(self.print_error)
                 worker.signals.result.connect(self.frame_extracted)
+                worker.signals.finished.connect(self.timeit)
                 self.ffmpeg_threadpool.start(worker)
                 # TODO dummy image displayed until we have real thumb
             return pix
@@ -90,6 +93,10 @@ class SceneModel(QAbstractTableModel):
         pix = QPixmap.fromImage(im)
         QPixmapCache.insert(obj['cache_key'], pix)
         self.ui.scenes_list_model.layoutChanged.emit()
+
+    def timeit(self, id, t):
+        self.time_sum += t
+        self.timeit_cnt += 1
 
     def setup_db(self):
         create_table_query = QSqlQuery()
