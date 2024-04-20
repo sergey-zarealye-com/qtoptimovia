@@ -271,7 +271,8 @@ class VideoImportWorker(QRunnable):
                 pass
             except Exception:
                 print(traceback.format_exc())
-            cap.release()
+            finally:
+                cap.release()
             if len(pos_list) and (scene_cuts is None):
                 yield pos_list, buff
             elif len(pos_list) and (scene_cuts != None):

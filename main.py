@@ -198,7 +198,7 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.ffmpeg_threadpool = QThreadPool()
-        self.ffmpeg_threadpool.setMaxThreadCount(6) #4
+        self.ffmpeg_threadpool.setMaxThreadCount(4) #4
         self.gpu_threadpool = QThreadPool()
         self.gpu_threadpool.setMaxThreadCount(1) #1
 
@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
         scene_id = SceneModel.insert(video_file_id, scene_start, scene_end, scene_embedding)
 
     def metadata_thread_complete(self, id:int, metadata:dict):
-        fname = FilesModel.select_file_path(id)
+        fname, _ = FilesModel.select_file_path(id)
         worker = VideoImportWorker(id=id,
                                    video_file_path=fname,
                                    metadata=metadata,
@@ -239,7 +239,7 @@ class MainWindow(QMainWindow):
 
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports():
-            fname = FilesModel.select_file_path(id)
+            fname, _ = FilesModel.select_file_path(id)
             worker = MetadataWorker(id=id,
                                    video_file_path=fname
                                    )

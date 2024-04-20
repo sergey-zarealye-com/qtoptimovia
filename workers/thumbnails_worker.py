@@ -30,6 +30,7 @@ class ThumbnailsWorker(QRunnable):
         self.signals = WorkerSignals()
 
         self.id = kwargs['id']
+        self.rot = kwargs['rot']
         self.fname = self.kwargs['video_file_path']
         self.time_stamp = self.kwargs['ts']
         self.cache_key = self.kwargs['cache_key']
@@ -40,7 +41,8 @@ class ThumbnailsWorker(QRunnable):
     def run(self):
         t = 10000.
         try:
-            with VideoFileClip(self.fname, resize_algorithm='neighbor') as clip:     #'fast_bilinear')
+            #TODO this sometimes causes'access deny'error on clip closing, and this is very slow.
+            with VideoFileClip(self.fname, resize_algorithm='neighbor',) as clip:     #'fast_bilinear')
                 t0 = time()
                 self.frame = clip.get_frame(self.time_stamp)
                 t = time() - t0
@@ -49,6 +51,8 @@ class ThumbnailsWorker(QRunnable):
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            self.signals.result.emit(self.id, dict(cache_key=self.cache_key, frame=self.frame))
+            self.signals.result.emit(self.id, dict(cache_key=self.cache_key,
+                                                   frame=self.frame,
+                                                   rot=self.rot))
         finally:
             self.signals.finished.emit(self.id, t)

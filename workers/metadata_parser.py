@@ -48,11 +48,12 @@ class MetadataWorker(QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.metadata_result.emit(self.id, self.metadata)
-        finally:
+        # finally:
             self.signals.finished.emit(self.id, self.metadata)
 
     def parse_metadata(self, *args, **kwargs):
             bitrate = 0.0
+            rot = 0
             """
             Ищет в выходных данных ffprobe такие строки и парсит из них мета-данные фильма:        
             Stream #0:0: Video: mpeg4 (Advanced Simple Profile) (XVID / 0x44495658), yuv420p, 720x400 [SAR 1:1 DAR 9:5], 1976 kb/s, 25 fps, 25 tbr, 25 tbn, 25 tb
@@ -81,12 +82,15 @@ class MetadataWorker(QRunnable):
                     aac_rate = stream[u'bit_rate']
                     audio_channels = stream[u'channels']
                 if stream[u'codec_type'] == 'video':
-                    # TODO rot is always 0, check wooden bear metadata
-                    rot = 0
                     if u'tags' in stream:
                         if u'rotate' in stream[u'tags']:
                             rot = int(stream[u'tags'][u'rotate'])
                         # TODO empty creation dates in video4 folder
+                        elif u'side_data_list' in stream:
+                            for side_data in stream[u'side_data_list']:
+                                if u'rotation' in side_data:
+                                    rot = int(side_data[u'rotation'])
+                                    break
                         if u'creation_time' in stream[u'tags']:
                             creation_time = stream[u'tags'][u'creation_time']
                     if rot == 0:

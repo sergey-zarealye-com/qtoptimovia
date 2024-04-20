@@ -200,16 +200,22 @@ class FilesModel(QAbstractTableModel):
         return out
 
     @staticmethod
-    def select_file_path(id:int):
+    def select_file_path(id:int, fields=[]):
         select_query = QSqlQuery()
-        select_query.prepare("SELECT import_name, import_dir FROM video_files WHERE id=?")
+        if len(fields):
+            filders = ', ' + ', '.join(fields)
+        else:
+            filders = ''
+        select_query.prepare(f"SELECT import_name, import_dir {filders} FROM video_files WHERE id=?")
         select_query.addBindValue(id)
         if not select_query.exec():
             print(select_query.lastError().text())
         if select_query.first():
-            return os.path.join(select_query.value(1), select_query.value(0))
+            file_path = os.path.join(select_query.value(1), select_query.value(0))
+            other_fields = [select_query.value(i + 2) for i in range(len(fields))]
+            return file_path, other_fields
         else:
-            return None
+            return None, None
 
     @staticmethod
     def update_fields(id:int, data:dict):
@@ -244,3 +250,15 @@ class FilesModel(QAbstractTableModel):
         while select_query.next():
             out.append(select_query.value(0))
         return out
+
+    @staticmethod
+    def get_rotation(id):
+        select_query = QSqlQuery()
+        select_query.prepare("SELECT rot FROM video_files WHERE id=?")
+        select_query.addBindValue(id)
+        if not select_query.exec():
+            print(select_query.lastError().text())
+        if select_query.first():
+            return select_query.value(0)
+        else:
+            return None

@@ -6,6 +6,8 @@ import numpy as np
 
 import os
 
+from PyQt5.QtWidgets import QMessageBox
+
 from models.files import FilesModel
 from workers.thumbnails_worker import ThumbnailsWorker
 
@@ -41,7 +43,7 @@ class SceneModel(QAbstractTableModel):
             timestamp = self.db_model.data(self.db_model.index(row, col))
             video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
             video_file_id = self.db_model.data(video_file_idx)
-            fname = FilesModel.select_file_path(video_file_id)
+            fname, rot = FilesModel.select_file_path(video_file_id, ['rot'])
             cache_key = f"{video_file_id}_{timestamp:.2f}"
             pix = QPixmapCache.find(cache_key)
             if not pix:
@@ -49,7 +51,8 @@ class SceneModel(QAbstractTableModel):
                 worker = ThumbnailsWorker(id=video_file_id,
                                           ts=timestamp,
                                           video_file_path=fname,
-                                          cache_key=cache_key
+                                          cache_key=cache_key,
+                                          rot=rot[0],
                                         )
                 worker.signals.error.connect(self.print_error)
                 worker.signals.result.connect(self.frame_extracted)
@@ -80,16 +83,32 @@ class SceneModel(QAbstractTableModel):
         return 1
 
     def print_error(self, e):
-        print(e)
+        exctype, value, traceback_ = e
+        QMessageBox.critical(
+            None,
+            "Optimovia - Error!",
+            "Database Error: %s\n%s" % (value, traceback_),
+        )
 
     def frame_extracted(self, id, obj):
         frm = obj['frame']
+        rot = obj['rot']
         h, w = frm.shape[:2]
         im = QImage(QByteArray(frm.tobytes()), w, h, QImage.Format_RGB888)
-        if h > w:
-            im = im.scaledToHeight(self.THUMB_HEIGHT)
+        if rot == 90 or rot == -90 or rot == 270 or rot == -270:
+            if h > w:
+                hh = self.THUMB_WIDTH
+                ww = int(w / h * hh)
+                im = im.scaled(hh, ww, Qt.AspectRatioMode.IgnoreAspectRatio)
+            else:
+                ww = self.THUMB_HEIGHT
+                hh = int(h / w * ww)
+                im = im.scaled(hh, ww, Qt.AspectRatioMode.IgnoreAspectRatio)
         else:
-            im = im.scaledToWidth(self.THUMB_WIDTH)
+            if h > w:
+                im = im.scaledToHeight(self.THUMB_HEIGHT)
+            else:
+                im = im.scaledToWidth(self.THUMB_WIDTH)
         pix = QPixmap.fromImage(im)
         QPixmapCache.insert(obj['cache_key'], pix)
         self.ui.scenes_list_model.layoutChanged.emit()
