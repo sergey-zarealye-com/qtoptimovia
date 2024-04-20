@@ -3,7 +3,7 @@ import sys
 import traceback
 
 from PyQt5.QtCore import *
-from moviepy.video.io.VideoFileClip import VideoFileClip
+import cv2
 
 from workers.worker_signals import WorkerSignals
 
@@ -30,7 +30,6 @@ class ThumbnailsWorker(QRunnable):
         self.signals = WorkerSignals()
 
         self.id = kwargs['id']
-        self.rot = kwargs['rot']
         self.fname = self.kwargs['video_file_path']
         self.time_stamp = self.kwargs['ts']
         self.cache_key = self.kwargs['cache_key']
@@ -41,10 +40,12 @@ class ThumbnailsWorker(QRunnable):
     def run(self):
         t = 10000.
         try:
-            #TODO this sometimes causes'access deny'error on clip closing, and this is very slow.
-            with VideoFileClip(self.fname, resize_algorithm='neighbor',) as clip:     #'fast_bilinear')
-                t0 = time()
-                self.frame = clip.get_frame(self.time_stamp)
+            t0 = time()
+            cap = cv2.VideoCapture(self.fname)
+            if cap.isOpened():
+                cap.set(cv2.CAP_PROP_POS_MSEC, self.time_stamp * 1000)
+                ret, bgr_frame = cap.retrieve()
+                self.frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
                 t = time() - t0
         except:
             traceback.print_exc()
@@ -52,7 +53,7 @@ class ThumbnailsWorker(QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.result.emit(self.id, dict(cache_key=self.cache_key,
-                                                   frame=self.frame,
-                                                   rot=self.rot))
+                                                   frame=self.frame))
         finally:
+            cap.release()
             self.signals.finished.emit(self.id, t)
