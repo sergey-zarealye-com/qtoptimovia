@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from PyQt5.QtCore import Qt, QDir, QAbstractTableModel, QVariant, QByteArray
 from PyQt5.QtSql import QSqlQuery, QSqlTableModel
 from PyQt5.QtGui import QPixmap, QImage, QPixmapCache, QColor
@@ -17,6 +19,7 @@ class SceneModel(QAbstractTableModel):
         ("thumbnail1", "1"),
         ("thumbnail2", "2"),
         ("thumbnail3", "3"),
+        ("scene_end", "4")
     ])
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
@@ -37,9 +40,17 @@ class SceneModel(QAbstractTableModel):
             return QVariant()
         row = index.row()
         col= index.column()
+        duration_col = self.fields.index('scene_end')
         if role == Qt.DisplayRole:
-            return None #self.db_model.data(self.db_model.index(row, col))
-        if role == Qt.DecorationRole:
+            if col == duration_col:
+                end = self.db_model.data(self.db_model.index(row, col))
+                start = self.db_model.data(self.db_model.index(
+                    row, self.fields.index('scene_start')))
+                t = end - start
+                timecode = str(timedelta(seconds=t))[:-3]
+                return timecode
+            return None #
+        if role == Qt.DecorationRole and col != duration_col:
             timestamp = self.db_model.data(self.db_model.index(row, col))
             video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
             video_file_id = self.db_model.data(video_file_idx)
@@ -79,7 +90,7 @@ class SceneModel(QAbstractTableModel):
         return super().headerData(section, orientation, role)
 
     def get_video_file_id_column(self):
-        return 1
+        return self.fields.index('video_file_id')
 
     def print_error(self, e):
         exctype, value, traceback_ = e

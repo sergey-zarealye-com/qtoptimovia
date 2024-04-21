@@ -43,16 +43,12 @@ class VideoImportWorker(QRunnable):
         self.metadata = kwargs['metadata']
         self.duration = self.metadata['duration']
 
-        BUFFSIZE = 10
-        STEP_MSEC = 320 // 2
-        MAXTIME = 60000000
-        STEP_FRAMES = 8 // 2
-        MAXFRAME = 100000
-        self.BUFFSIZE = BUFFSIZE
-        self.STEP_MSEC = STEP_MSEC
-        self.MAXTIME = MAXTIME
-        self.STEP_FRAMES = STEP_FRAMES
-        self.MAXFRAME = MAXFRAME
+        self.BUFFSIZE = 10
+        self.STEP_MSEC = 320 // 2
+        self.MAXTIME = 60000000
+        self.STEP_FRAMES = 8 // 2
+        self.MAXFRAME = 100000
+        self.MIN_SCENE_SEC = 1.0
 
         # https://en.wikipedia.org/wiki/Finite_difference_coefficient
         self.FILTR = np.array([35 / 12, -26 / 3, 19 / 2, -14 / 3, 11 / 12])  # forward
@@ -94,7 +90,6 @@ class VideoImportWorker(QRunnable):
             return (0, 0, w, w)
 
     def split_by_scenes(self, *args, **kwargs):
-        # TODO have minimal scene length, join such a short scenes
         scenes = {}
         prev_image_features = None
         mean_image_features = None
@@ -135,7 +130,9 @@ class VideoImportWorker(QRunnable):
                             responces.append(abs(resp))
                         if len(responces) >= self.STD_WINDOW:
                             self.THRESHOLD = 3 * np.array(responces).std()
-                        if abs(resp) >= self.THRESHOLD and not now_triggered:
+                        if abs(resp) >= self.THRESHOLD \
+                                and not now_triggered\
+                                and current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000 - scene_start >= self.MIN_SCENE_SEC:
                             scene_end = current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000
                             emb = mean_image_features.cpu().numpy() / scene_frames_count
                             self.signals.partial_result.emit(self.id,

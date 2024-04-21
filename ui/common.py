@@ -1,8 +1,11 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QApplication, QStyle
+from PyQt5.QtWidgets import QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QApplication, \
+    QStyle, QLCDNumber
 
 from models.files import FilesModel
 from models.scenes import SceneModel
+
+from datetime import timedelta
 
 
 class ProgressDelegate(QStyledItemDelegate):
