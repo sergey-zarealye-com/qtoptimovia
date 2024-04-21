@@ -155,12 +155,11 @@ class VideoImportWorker(QRunnable):
                 progress = min(100., 10 + pos_sec / self.duration * 90)
                 self.signals.progress.emit(self.id, progress)
             if scene_frames_count > 0:
-                # TODO duration should be the last "scene_end"
                 emb = mean_image_features.cpu().numpy() / scene_frames_count
                 self.signals.partial_result.emit(self.id,
                                                  dict(
                                                      scene_start=scene_start,
-                                                     scene_end=current_pos,
+                                                     scene_end=self.duration,
                                                      scene_embedding=QByteArray(emb.tobytes())
                                                  )
                                                  )

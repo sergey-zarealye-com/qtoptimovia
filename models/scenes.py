@@ -16,10 +16,11 @@ from workers.thumbnails_worker import ThumbnailsWorker
 
 class SceneModel(QAbstractTableModel):
     COLUMNS = dict([
-        ("thumbnail1", "1"),
-        ("thumbnail2", "2"),
-        ("thumbnail3", "3"),
-        ("scene_end", "4")
+        ("thumbnail1", ""),
+        ("thumbnail2", ""),
+        ("thumbnail3", ""),
+        ("scene_end", "Duration"),
+        ("scene_start", "Timecode")
     ])
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
@@ -41,16 +42,23 @@ class SceneModel(QAbstractTableModel):
         row = index.row()
         col= index.column()
         duration_col = self.fields.index('scene_end')
+        start_col = self.fields.index('scene_start')
         if role == Qt.DisplayRole:
             if col == duration_col:
                 end = self.db_model.data(self.db_model.index(row, col))
                 start = self.db_model.data(self.db_model.index(
                     row, self.fields.index('scene_start')))
-                t = end - start
+                t = end - start + 0.00001 #this is to fix str representation of timedelta when exact number of seconds
                 timecode = str(timedelta(seconds=t))[:-3]
                 return timecode
-            return None #
-        if role == Qt.DecorationRole and col != duration_col:
+            if col == start_col:
+                start = self.db_model.data(self.db_model.index(row, col))
+                t = start + 0.00001 #this is to fix str representation of timedelta when exact number of seconds
+                timecode = str(timedelta(seconds=t))[:-3]
+                return timecode
+        if role == Qt.DecorationRole \
+                and col != duration_col \
+                and col != start_col:
             timestamp = self.db_model.data(self.db_model.index(row, col))
             video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
             video_file_id = self.db_model.data(video_file_idx)

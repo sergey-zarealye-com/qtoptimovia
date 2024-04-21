@@ -207,6 +207,7 @@ class MainWindow(QMainWindow):
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
+        self.update_layout(self.ui.pages[0].files_list_model) #
         self.update_layout(self.ui.pages[1].files_list_model)
 
     def print_output(self, s):

@@ -48,7 +48,6 @@ class MetadataWorker(QRunnable):
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.metadata_result.emit(self.id, self.metadata)
-        # finally:
             self.signals.finished.emit(self.id, self.metadata)
 
     def parse_metadata(self, *args, **kwargs):
@@ -71,7 +70,7 @@ class MetadataWorker(QRunnable):
             pipe.stdout.readline()
             infos = pipe.stdout.read().decode("utf-8")
             parsed = json.loads("{" + infos)
-            creation_time = None
+            creation_time = dt.datetime.now().isoformat()
             aac_rate = 0
             audio_depth = 0
             audio_channels = 0
@@ -85,7 +84,6 @@ class MetadataWorker(QRunnable):
                     if u'tags' in stream:
                         if u'rotate' in stream[u'tags']:
                             rot = int(stream[u'tags'][u'rotate'])
-                        # TODO empty creation dates in video4 folder
                         elif u'side_data_list' in stream:
                             for side_data in stream[u'side_data_list']:
                                 if u'rotation' in side_data:
