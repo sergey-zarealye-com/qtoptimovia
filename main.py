@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
@@ -9,6 +9,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
 from PyQt5.QtSql import QSqlDatabase
 
+from models.albums import AlbumsModel
 from models.scenes import SceneModel
 from ui.albums_ui import AlbumsUI
 from ui.files_ui import FilesUI
@@ -148,6 +149,7 @@ class MainWindowUI:
         layout.addWidget(self.timeit_label)
         self.statusbar.addWidget(sb_widget)
 
+        # TODO resume paused files import from the position of scene
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_statusbar)
         self.timer.start(500)
@@ -186,6 +188,7 @@ class MainWindow(QMainWindow):
 
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
+        self.ui.pages[1].tree.clicked.connect(self.show_files_in_dir)
         self.ui.pages[1].tree.collapsed.connect(self.collapse_files)
         self.ui.pages[1].files_list_view.clicked.connect(self.show_scenes)
 
@@ -237,6 +240,8 @@ class MainWindow(QMainWindow):
 
     def import_thread_complete(self, id: int):
         print('finished import id:', id)
+        self.ui.pages[0].tree_model = AlbumsModel()
+        self.ui.pages[0].tree.setModel(self.ui.pages[0].tree_model)
 
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports():
@@ -263,17 +268,26 @@ class MainWindow(QMainWindow):
         self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
 
     def import_video_files(self, signal):
-        ### TODO make slot to import selected files only, not just the full dir
         FilesModel.import_files(self.video_files_in_directory)
         self.update_layout(self.ui.pages[1].files_list_model)
 
     def show_files_in_dir(self, signal):
-        dir_path = self.ui.pages[1].files_list_model.get_file_path(signal)
-        self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
-        self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
-        self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
-        # Import tool button
-        self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
+        if self.ui.pages[1].tree.isExpanded(signal):
+            dir_path = self.ui.pages[1].files_list_model.get_file_path(signal)
+            self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
+            self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
+            self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
+            # Import tool button
+            self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
+        else:
+            self.collapse_files(signal)
+            selected_path = self.ui.pages[1].files_list_model.fs_model.filePath(signal)
+            if os.path.isfile(selected_path):
+                dir_path, file_name = os.path.split(selected_path)
+                self.video_files_in_directory = [selected_path]
+                self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}' AND import_name='{file_name}'")
+                self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
+                self.ui.actions_toolbar[0].setEnabled(True)
 
     def show_files_for_date(self, signal):
         r = signal.row()
