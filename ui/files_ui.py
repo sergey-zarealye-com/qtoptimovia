@@ -19,11 +19,11 @@ class FilesUI:
         self.scenes_list_model = SceneModel(self)
 
         self.tree_toolbar = QToolBar()
-        self.import_action = QAction(QIcon("icons/film--plus.png"), "Import videos")
+        self.import_action = QAction(QIcon("icons/film--plus.png"), "Import")
 
         self.video_files_toolbar = QToolBar()
-        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "Add video to album")
-        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add video to montage")
+        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "Add to album")
+        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add to montage")
 
         self.scenes_toolbar = QToolBar()
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
@@ -53,6 +53,7 @@ class FilesUI:
         v_main_layout.addWidget(widget_container)
 
     def setup_tree_toolbar(self):
+        self.tree_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.tree_toolbar.addWidget(get_fixed_spacer())
         self.tree_toolbar.addWidget(QLabel('<h3>Your PC</h3>'))
         self.tree_toolbar.addWidget(get_horizontal_spacer())

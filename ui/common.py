@@ -36,28 +36,6 @@ def setup_files_list_view(view, model):
         if f not in FilesModel.COLUMNS:
             view.setColumnHidden(i, True)
 
-def c_setup_video_files_toolbar(tb, *actions):
-    tb.addWidget(get_fixed_spacer())
-    tb.addWidget(QLabel('<h3>Videos</h3>'))
-    tb.addWidget(get_horizontal_spacer())
-    tb.addAction(actions[0])
-    tb.addAction(actions[1])
-    tb.addWidget(get_fixed_spacer())
-    tb.setIconSize(QSize(16, 16))
-    tb.setMovable(False)
-    actions[0].setDisabled(True)
-    actions[1].setDisabled(True)
-
-def c_setup_scenes_toolbar(tb, *actions):
-    tb.addWidget(get_fixed_spacer())
-    tb.addWidget(QLabel('<h3>Scenes</h3>'))
-    tb.addWidget(get_horizontal_spacer())
-    tb.addAction(actions[0])
-    tb.addWidget(get_fixed_spacer())
-    tb.setIconSize(QSize(16, 16))
-    tb.setMovable(False)
-    actions[0].setDisabled(True)
-
 def setup_scenes_view(view, model):
     view.setModel(model)
     view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -77,6 +55,30 @@ def setup_scenes_view(view, model):
     for i, f in enumerate(model.fields):
         if f not in SceneModel.COLUMNS:
             view.setColumnHidden(i, True)
+
+def c_setup_video_files_toolbar(tb, *actions):
+    tb.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+    tb.addWidget(get_fixed_spacer())
+    tb.addWidget(QLabel('<h3>Videos</h3>'))
+    tb.addWidget(get_horizontal_spacer())
+    tb.addAction(actions[0])
+    tb.addAction(actions[1])
+    tb.addWidget(get_fixed_spacer())
+    tb.setIconSize(QSize(16, 16))
+    tb.setMovable(False)
+    actions[0].setDisabled(True)
+    actions[1].setDisabled(True)
+
+def c_setup_scenes_toolbar(tb, *actions):
+    tb.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+    tb.addWidget(get_fixed_spacer())
+    tb.addWidget(QLabel('<h3>Scenes</h3>'))
+    tb.addWidget(get_horizontal_spacer())
+    tb.addAction(actions[0])
+    tb.addWidget(get_fixed_spacer())
+    tb.setIconSize(QSize(16, 16))
+    tb.setMovable(False)
+    actions[0].setDisabled(True)
 
 def get_fixed_spacer():
     spacer = QToolButton()

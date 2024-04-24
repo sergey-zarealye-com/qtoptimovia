@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSize
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QSizePolicy, QAbstractItemView, QTableView, \
     QHeaderView, QToolBar, QAction
@@ -24,11 +24,11 @@ class AlbumsUI:
         self.del_album_action = QAction(QIcon("icons/minus-button.png"), "Remove album")
 
         self.video_files_toolbar = QToolBar()
-        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "Add video to album")
-        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add video to montage")
+        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "Add to album")
+        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add to montage")
 
         self.scenes_toolbar = QToolBar()
-        self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
+        self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play")
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
@@ -64,6 +64,7 @@ class AlbumsUI:
         v_main_layout.addWidget(widget_container)
 
     def setup_alb_toolbar(self):
+        self.albums_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.albums_toolbar.addWidget(get_fixed_spacer())
         self.albums_toolbar.addWidget(QLabel('<h3>Albums</h3>'))
         self.albums_toolbar.addWidget(get_horizontal_spacer())
