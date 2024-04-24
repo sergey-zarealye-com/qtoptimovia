@@ -76,7 +76,6 @@ class SceneModel(QAbstractTableModel):
                 worker.signals.result.connect(self.frame_extracted)
                 worker.signals.finished.connect(self.timeit)
                 self.ffmpeg_threadpool.start(worker)
-                # TODO dummy image displayed until we have real thumb
             return pix
 
     def rowCount(self, index):

@@ -73,7 +73,6 @@ class VideoImportWorker(QRunnable):
             self.signals.result.emit(self.id, self.scenes)
             self.signals.finished.emit(self.id, self.scenes)
             self.signals.progress.emit(self.id, 100.)
-            # TODO update albums tree view after the import is completed
 
     def tiling(self):
         w = self.metadata['width']
