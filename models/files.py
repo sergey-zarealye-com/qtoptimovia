@@ -1,8 +1,11 @@
-from PyQt5.QtCore import Qt, QDir, QAbstractTableModel
+from PyQt5.QtCore import Qt, QDir, QAbstractTableModel, QByteArray
+from PyQt5.QtGui import QPixmapCache, QPixmap, QImage
 from PyQt5.QtWidgets import QFileSystemModel, QMessageBox
 from PyQt5.QtSql import QSqlQuery, QSqlTableModel
 
 import os
+
+from workers.thumbnails_worker import ThumbnailsWorker
 
 
 class FilesModel(QAbstractTableModel):
@@ -13,6 +16,8 @@ class FilesModel(QAbstractTableModel):
         ("created_at", "Created at"),
         ("proc_progress", "Processed"),
     ])
+    THUMB_HEIGHT = 96
+    THUMB_WIDTH = 96
 
 
     def __init__(self, page:int):
@@ -28,12 +33,50 @@ class FilesModel(QAbstractTableModel):
         self.db_model = QSqlTableModel()
         self.db_model.setTable(self.table_name)
         self.db_model.setEditStrategy(QSqlTableModel.OnFieldChange)
+        self.ffmpeg_threadpool = None
 
     def data(self, index, role):
         row = index.row()
         col= index.column()
+        data = self.db_model.data(self.db_model.index(row, col))
         if role == Qt.DisplayRole or role == Qt.EditRole:
-            return self.db_model.data(self.db_model.index(row, col))
+            if col == self.get_progress_section() and data >= 100:
+                return ''
+            else:
+                return data
+        if role == Qt.DecorationRole:
+            if col == self.get_progress_section():
+                if data >= 100:
+                    video_file_idx = index.siblingAtColumn(0)
+                    video_file_id = self.db_model.data(video_file_idx)
+                    fname, _ = FilesModel.select_file_path(video_file_id)
+                    timestamps = FilesModel.get_thumbnail_timestamp(video_file_id, 1)
+                    if len(timestamps):
+                        timestamp = timestamps[0]
+                        cache_key = f"mini_{video_file_id}_{timestamp:.2f}"
+                        pix = QPixmapCache.find(cache_key)
+                        if not pix:
+                            QPixmapCache.insert(cache_key, QPixmap())
+                            worker = ThumbnailsWorker(id=video_file_id,
+                                                      ts=timestamp,
+                                                      video_file_path=fname,
+                                                      cache_key=cache_key,
+                                                      )
+                            worker.signals.result.connect(self.frame_extracted)
+                            self.ffmpeg_threadpool.start(worker)
+                        return pix
+
+    def frame_extracted(self, id, obj):
+        frm = obj['frame']
+        h, w = frm.shape[:2]
+        im = QImage(QByteArray(frm.tobytes()), w, h, QImage.Format_RGB888)
+        if h > w:
+            im = im.scaledToHeight(self.THUMB_HEIGHT)
+        else:
+            im = im.scaledToWidth(self.THUMB_WIDTH)
+        pix = QPixmap.fromImage(im)
+        QPixmapCache.insert(obj['cache_key'], pix)
+        self.layoutChanged.emit()
 
     def rowCount(self, index):
         if index.isValid():
@@ -262,3 +305,16 @@ class FilesModel(QAbstractTableModel):
             return select_query.value(0)
         else:
             return None
+
+    @staticmethod
+    def get_thumbnail_timestamp(video_file_id: int, limit: int, field='thumbnail2') -> list:
+        select_query = QSqlQuery()
+        select_query.prepare(f"SELECT {field} FROM scenes WHERE video_file_id=? ORDER BY id ASC LIMIT ?")
+        select_query.addBindValue(video_file_id)
+        select_query.addBindValue(limit)
+        select_query.exec()
+        out = []
+        cnt = 0
+        while select_query.next():
+            out.append(select_query.value(0))
+        return out

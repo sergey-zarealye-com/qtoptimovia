@@ -117,7 +117,7 @@ class SceneModel(QAbstractTableModel):
             im = im.scaledToWidth(self.THUMB_WIDTH)
         pix = QPixmap.fromImage(im)
         QPixmapCache.insert(obj['cache_key'], pix)
-        self.ui.scenes_list_model.layoutChanged.emit()
+        self.layoutChanged.emit()
 
     def timeit(self, id, t):
         self.time_sum += t
@@ -195,3 +195,5 @@ class SceneModel(QAbstractTableModel):
         if select_query.first():
             buff = select_query.value(0)
             return np.frombuffer(buff, dtype=np.float32)
+
+

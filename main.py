@@ -175,6 +175,8 @@ class MainWindow(QMainWindow):
 
         self.ui.pages[0].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
         self.ui.pages[1].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
+        self.ui.pages[0].files_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
+        self.ui.pages[1].files_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))

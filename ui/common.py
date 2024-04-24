@@ -9,12 +9,15 @@ from models.scenes import SceneModel
 class ProgressDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         progress = index.data(Qt.DisplayRole)
-        opt = QStyleOptionProgressBar()
-        opt.rect = option.rect
-        opt.minimum = 0
-        opt.maximum = 100
-        opt.progress = int(progress)
-        QApplication.style().drawControl(QStyle.CE_ProgressBar, opt, painter)
+        if progress != '' and progress < 100:
+            opt = QStyleOptionProgressBar()
+            opt.rect = option.rect
+            opt.minimum = 0
+            opt.maximum = 100
+            opt.progress = int(progress)
+            QApplication.style().drawControl(QStyle.CE_ProgressBar, opt, painter)
+        else:
+            super().paint(painter, option, index)
 
 
 def setup_files_list_view(view, model):
