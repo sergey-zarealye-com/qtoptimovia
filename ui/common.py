@@ -1,11 +1,9 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QApplication, \
-    QStyle, QLCDNumber
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtWidgets import (QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QApplication,
+                             QStyle, QToolButton, QLabel)
 
 from models.files import FilesModel
 from models.scenes import SceneModel
-
-from datetime import timedelta
 
 
 class ProgressDelegate(QStyledItemDelegate):
@@ -38,6 +36,27 @@ def setup_files_list_view(view, model):
         if f not in FilesModel.COLUMNS:
             view.setColumnHidden(i, True)
 
+def c_setup_video_files_toolbar(tb, *actions):
+    tb.addWidget(get_fixed_spacer())
+    tb.addWidget(QLabel('<h3>Videos</h3>'))
+    tb.addWidget(get_horizontal_spacer())
+    tb.addAction(actions[0])
+    tb.addAction(actions[1])
+    tb.addWidget(get_fixed_spacer())
+    tb.setIconSize(QSize(16, 16))
+    tb.setMovable(False)
+    actions[0].setDisabled(True)
+    actions[1].setDisabled(True)
+
+def c_setup_scenes_toolbar(tb, *actions):
+    tb.addWidget(get_fixed_spacer())
+    tb.addWidget(QLabel('<h3>Scenes</h3>'))
+    tb.addWidget(get_horizontal_spacer())
+    tb.addAction(actions[0])
+    tb.addWidget(get_fixed_spacer())
+    tb.setIconSize(QSize(16, 16))
+    tb.setMovable(False)
+    actions[0].setDisabled(True)
 
 def setup_scenes_view(view, model):
     view.setModel(model)
@@ -58,3 +77,21 @@ def setup_scenes_view(view, model):
     for i, f in enumerate(model.fields):
         if f not in SceneModel.COLUMNS:
             view.setColumnHidden(i, True)
+
+def get_fixed_spacer():
+    spacer = QToolButton()
+    spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+    spacer.setEnabled(False)
+    return spacer
+
+def get_vertical_spacer():
+    spacer = QToolButton()
+    spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+    spacer.setEnabled(False)
+    return spacer
+
+def get_horizontal_spacer():
+    spacer = QToolButton()
+    spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    spacer.setEnabled(False)
+    return spacer

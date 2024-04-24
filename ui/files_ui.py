@@ -1,11 +1,13 @@
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView,
                              QSizePolicy, QTableView, QApplication,
-                             QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QStyle)
+                             QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QStyle, QToolBar, QAction)
 from PyQt5.QtCore import Qt, QSize
 
 from models.files import FilesModel
 from models.scenes import SceneModel
-from ui.common import setup_scenes_view, setup_files_list_view
+from ui.common import setup_scenes_view, setup_files_list_view, c_setup_video_files_toolbar, c_setup_scenes_toolbar, \
+    get_fixed_spacer, get_horizontal_spacer
 
 
 class FilesUI:
@@ -16,24 +18,53 @@ class FilesUI:
         self.scenes_list_view = QTableView()
         self.scenes_list_model = SceneModel(self)
 
+        self.tree_toolbar = QToolBar()
+        self.import_action = QAction(QIcon("icons/film--plus.png"), "Import videos")
+
+        self.video_files_toolbar = QToolBar()
+        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "Add video to album")
+        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add video to montage")
+
+        self.scenes_toolbar = QToolBar()
+        self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
+
     def setup_ui(self, win: QWidget, col: int) -> None:
         widget_container = QWidget()
         layout = QVBoxLayout(widget_container)
         if col == 0:
-            layout.addWidget(QLabel('<h3>Local files</h3>'))
+            self.setup_tree_toolbar()
+            layout.setMenuBar(self.tree_toolbar)
             self.tree.setModel(self.files_list_model.fs_model)
             layout.addWidget(self.tree)
             self.tree.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             self.tree.setColumnWidth(0, 200)
         elif col == 1:
-            layout.addWidget(QLabel('<h3>Imported videos</h3>'))
+            self.setup_video_files_toolbar()
+            layout.setMenuBar(self.video_files_toolbar)
             setup_files_list_view(self.files_list_view, self.files_list_model)
             layout.addWidget(self.files_list_view)
         elif col == 2:
-            layout.addWidget(QLabel('<h3>Scenes</h3>'))
+            self.setup_scenes_toolbar()
+            layout.setMenuBar(self.scenes_toolbar)
             setup_scenes_view(self.scenes_list_view, self.scenes_list_model)
             layout.addWidget(self.scenes_list_view)
 
         v_main_layout = QVBoxLayout(win)
         v_main_layout.addWidget(widget_container)
+
+    def setup_tree_toolbar(self):
+        self.tree_toolbar.addWidget(get_fixed_spacer())
+        self.tree_toolbar.addWidget(QLabel('<h3>Your PC</h3>'))
+        self.tree_toolbar.addWidget(get_horizontal_spacer())
+        self.tree_toolbar.addAction(self.import_action)
+        self.tree_toolbar.addWidget(get_fixed_spacer())
+        self.tree_toolbar.setIconSize(QSize(16, 16))
+        self.tree_toolbar.setMovable(False)
+        self.import_action.setDisabled(True)
+
+    def setup_video_files_toolbar(self):
+        c_setup_video_files_toolbar(self.video_files_toolbar, self.to_album_action, self.to_montage_action)
+
+    def setup_scenes_toolbar(self):
+        c_setup_scenes_toolbar(self.scenes_toolbar, self.play_action)
 

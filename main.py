@@ -12,19 +12,21 @@ from PyQt5.QtSql import QSqlDatabase
 from models.albums import AlbumsModel
 from models.scenes import SceneModel
 from ui.albums_ui import AlbumsUI
+from ui.common import get_fixed_spacer, get_vertical_spacer, get_horizontal_spacer
 from ui.files_ui import FilesUI
 from ui.archive_ui import ArchiveUI
 from ui.montage_ui import MontageUI
 from ui.ext_search_ui import ExtSearchUI
 from models.files import FilesModel
-
-import qdarktheme
-
-import qtmodern.styles
-import qtmodern.windows
-
 from workers.metadata_parser import MetadataWorker
 from workers.video_import import VideoImportWorker
+
+IS_USE_QDARKTHEME = False
+if IS_USE_QDARKTHEME:
+    import qdarktheme
+else:
+    import qtmodern.styles
+    import qtmodern.windows
 
 
 class MainWindowUI:
@@ -37,17 +39,12 @@ class MainWindowUI:
         sep1 = QAction()
         sep1.setSeparator(True)
         self.actions_sidebar = (
-            QAction(QIcon("icons/video_library_black_24dp.svg"), "Your albums"),
-            QAction(QIcon("icons/video_file_black_24dp.svg"), "Your local video files"),
-            QAction(QIcon("icons/archive_black_24dp.svg"), "Your archive storage"),
-            QAction(QIcon("icons/content_cut_black_24dp.svg"), "Video montage"),
+            QAction(QIcon("icons/command.svg"), "Your albums"),
+            QAction(QIcon("icons/disk.svg"), "Your local video files"),
+            QAction(QIcon("icons/binoculars.svg"), "Your archive storage"),
+            QAction(QIcon("icons/clip.svg"), "Video montage"),
             sep1,
-            QAction(QIcon("icons/search_black_24dp.svg"), "Extended search"),
-        )
-        self.actions_toolbar = (
-            QAction("Import"),
-            QAction("To album"),
-            QAction("To montage"),
+            QAction(QIcon("icons/find.svg"), "Extended search"),
         )
 
         action_group_toolbar = QActionGroup(main_win)
@@ -57,7 +54,6 @@ class MainWindowUI:
         self.col1_stack_widget = QStackedWidget()
         self.col2_stack_widget = QStackedWidget()
         self.col3_stack_widget = QStackedWidget()
-        self.toolbar = QToolBar("Toolbar")
 
         sidebar = QToolBar("Sidebar")
         self.statusbar = QStatusBar()
@@ -70,42 +66,14 @@ class MainWindowUI:
             action_group_toolbar.addAction(action)
         self.actions_sidebar[0].setChecked(True)
 
-        for action in self.actions_toolbar:
-            self.toolbar.addAction(action)
-            action.setEnabled(False)
-
         # Setup Widgets
-        spacer1 = QToolButton()
-        spacer1.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        spacer1.setEnabled(False)
-
-        spacer2 = QToolButton()
-        spacer2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        spacer2.setEnabled(False)
-
-        hspacer1 = QToolButton()
-        hspacer1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        hspacer1.setEnabled(False)
-
-        sidebar.setIconSize(QSize(36, 36))
+        sidebar.setIconSize(QSize(44, 44))
         sidebar.setMovable(False)
-        sidebar.addWidget(spacer1)
         sidebar.addActions(self.actions_sidebar)
-        sidebar.addWidget(spacer2)
+        sidebar.addWidget(get_vertical_spacer())
         sidebar.addWidget(tool_btn_settings)
 
-        self.toolbar.setIconSize(QSize(36, 36))
-        self.toolbar.setMovable(False)
-        self.toolbar.addWidget(hspacer1)
-        search_fld = QLineEdit()
-        search_fld.setMinimumWidth(200)
-        search_fld.setMaximumWidth(300)
-        self.toolbar.addWidget(search_fld)
-        search_btn = QToolButton()
-        search_btn.setIcon(QIcon("icons/search_black_24dp.svg"))
-        self.toolbar.addWidget(search_btn)
-
-        tool_btn_settings.setIcon(QIcon("icons/settings_black_24dp.svg"))
+        tool_btn_settings.setIcon(QIcon("icons/hammer.svg"))
 
         self.pages = []
 
@@ -121,7 +89,7 @@ class MainWindowUI:
 
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.addWidget(self.toolbar)
+        # content_layout.addWidget(self.toolbar)
 
         splitter = QSplitter()
         splitter.addWidget(self.col1_stack_widget)
@@ -183,8 +151,8 @@ class MainWindow(QMainWindow):
             action.triggered.connect(self.change_page)
 
         # Import tool button
-        self.ui.actions_toolbar[0].triggered.connect(self.import_video_files)
-        self.ui.actions_toolbar[0].triggered.connect(self.init_importing_workers)
+        self.ui.pages[1].import_action.triggered.connect(self.import_video_files)
+        self.ui.pages[1].import_action.triggered.connect(self.init_importing_workers)
 
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
@@ -278,7 +246,7 @@ class MainWindow(QMainWindow):
             self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
             self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
             # Import tool button
-            self.ui.actions_toolbar[0].setEnabled(len(self.video_files_in_directory) > 0)
+            self.ui.pages[1].import_action.setEnabled(len(self.video_files_in_directory) > 0)
         else:
             self.collapse_files(signal)
             selected_path = self.ui.pages[1].files_list_model.fs_model.filePath(signal)
@@ -287,7 +255,7 @@ class MainWindow(QMainWindow):
                 self.video_files_in_directory = [selected_path]
                 self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}' AND import_name='{file_name}'")
                 self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
-                self.ui.actions_toolbar[0].setEnabled(True)
+                self.ui.pages[1].import_action.setEnabled(True)
 
     def show_files_for_date(self, signal):
         r = signal.row()
@@ -305,7 +273,7 @@ class MainWindow(QMainWindow):
 
     def collapse_files(self, signal):
         # Import tool button
-        self.ui.actions_toolbar[0].setEnabled(False)
+        self.ui.pages[1].import_action.setEnabled(False)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter='0')
         self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
 
@@ -327,20 +295,19 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    # Create the connection
     con = QSqlDatabase.addDatabase("QSQLITE")
     con.setDatabaseName("data/optimovia.db")
 
-    QPixmapCache.setCacheLimit(2000 * 1024)
-
+    QPixmapCache.setCacheLimit(20 * 1024)
 
     app = QApplication(sys.argv)
-    if sys.platform == 'darwin':
-        app.setStyle("Fusion")
-    else:
-        qdarktheme.setup_theme('auto')
 
-    # Try to open the connection and handle possible errors
+    if IS_USE_QDARKTHEME:
+        if sys.platform == 'darwin':
+            app.setStyle("Fusion")
+        else:
+            qdarktheme.setup_theme('auto')
+
     if not con.open():
         QMessageBox.critical(
             None,
@@ -351,12 +318,12 @@ if __name__ == "__main__":
 
     w = MainWindow()
 
-    w.setDocumentMode(True)
-    w.show()
-    
-
-    # qtmodern.styles.light(app)
-    # mw = qtmodern.windows.ModernWindow(w)
-    # mw.show()
+    if IS_USE_QDARKTHEME:
+        w.setDocumentMode(True)
+        w.show()
+    else:
+        qtmodern.styles.dark(app)
+        mw = qtmodern.windows.ModernWindow(w)
+        mw.show()
 
     app.exec()
