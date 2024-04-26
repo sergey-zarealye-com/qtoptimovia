@@ -5,7 +5,6 @@ import json
 import sys
 import traceback
 
-import cv2
 from PyQt5.QtCore import *
 
 from workers.worker_signals import WorkerSignals

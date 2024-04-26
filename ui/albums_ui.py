@@ -33,9 +33,6 @@ class AlbumsUI:
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
         widget_container = QWidget()
-
-
-
         layout = QVBoxLayout(widget_container)
 
         if col == 0:

@@ -33,7 +33,7 @@ class FilesModel(QAbstractTableModel):
         self.db_model = QSqlTableModel()
         self.db_model.setTable(self.table_name)
         self.db_model.setEditStrategy(QSqlTableModel.OnFieldChange)
-        self.ffmpeg_threadpool = None
+        self.cpu_threadpool = None
 
     def data(self, index, role):
         row = index.row()
@@ -63,7 +63,7 @@ class FilesModel(QAbstractTableModel):
                                                       cache_key=cache_key,
                                                       )
                             worker.signals.result.connect(self.frame_extracted)
-                            self.ffmpeg_threadpool.start(worker)
+                            self.cpu_threadpool.start(worker)
                         return pix
 
     def frame_extracted(self, id, obj):

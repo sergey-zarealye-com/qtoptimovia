@@ -19,6 +19,7 @@ from ui.montage_ui import MontageUI
 from ui.ext_search_ui import ExtSearchUI
 from models.files import FilesModel
 from workers.metadata_parser import MetadataWorker
+from workers.scene_index_builder import SceneIndexBuilder
 from workers.video_import import VideoImportWorker
 
 IS_USE_QDARKTHEME = False
@@ -58,7 +59,7 @@ class MainWindowUI:
         sidebar = QToolBar("Sidebar")
         self.statusbar = QStatusBar()
         menubar = QMenuBar()
-        tool_btn_settings = QToolButton()
+        self.tool_btn_settings = QToolButton()
 
         # Setup Actions
         for action in self.actions_sidebar:
@@ -71,9 +72,9 @@ class MainWindowUI:
         sidebar.setMovable(False)
         sidebar.addActions(self.actions_sidebar)
         sidebar.addWidget(get_vertical_spacer())
-        sidebar.addWidget(tool_btn_settings)
+        sidebar.addWidget(self.tool_btn_settings)
 
-        tool_btn_settings.setIcon(QIcon("icons/hammer.svg"))
+        self.tool_btn_settings.setIcon(QIcon("icons/hammer.svg"))
 
         self.pages = []
 
@@ -89,7 +90,6 @@ class MainWindowUI:
 
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
-        # content_layout.addWidget(self.toolbar)
 
         splitter = QSplitter()
         splitter.addWidget(self.col1_stack_widget)
@@ -128,8 +128,8 @@ class MainWindowUI:
         main_win.setStatusBar(self.statusbar)
 
     def update_statusbar(self):
-        self.ffmpeg_threads_pb.setMaximum(self.main_win.ffmpeg_threadpool.maxThreadCount())
-        cnt = self.main_win.ffmpeg_threadpool.activeThreadCount()
+        self.ffmpeg_threads_pb.setMaximum(self.main_win.cpu_threadpool.maxThreadCount())
+        cnt = self.main_win.cpu_threadpool.activeThreadCount()
         self.ffmpeg_threads_pb.setValue(cnt)
         if self.pages[0].scenes_list_model.timeit_cnt > 0:
             mtime = self.pages[0].scenes_list_model.time_sum / self.pages[0].scenes_list_model.timeit_cnt
@@ -150,6 +150,8 @@ class MainWindow(QMainWindow):
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
 
+        self.ui.tool_btn_settings.clicked.connect(self.rebuild_scenes_index)
+
         # Import tool button
         self.ui.pages[1].import_action.triggered.connect(self.import_video_files)
         self.ui.pages[1].import_action.triggered.connect(self.init_importing_workers)
@@ -168,15 +170,15 @@ class MainWindow(QMainWindow):
         self.video_files_in_directory = None
 
         # Workers
-        self.ffmpeg_threadpool = QThreadPool()
-        self.ffmpeg_threadpool.setMaxThreadCount(4) #4
+        self.cpu_threadpool = QThreadPool()
+        self.cpu_threadpool.setMaxThreadCount(4) #4
         self.gpu_threadpool = QThreadPool()
         self.gpu_threadpool.setMaxThreadCount(1) #1
 
-        self.ui.pages[0].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
-        self.ui.pages[1].scenes_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
-        self.ui.pages[0].files_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
-        self.ui.pages[1].files_list_model.ffmpeg_threadpool = self.ffmpeg_threadpool
+        self.ui.pages[0].scenes_list_model.cpu_threadpool = self.cpu_threadpool
+        self.ui.pages[1].scenes_list_model.cpu_threadpool = self.cpu_threadpool
+        self.ui.pages[0].files_list_model.cpu_threadpool = self.cpu_threadpool
+        self.ui.pages[1].files_list_model.cpu_threadpool = self.cpu_threadpool
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
@@ -195,6 +197,10 @@ class MainWindow(QMainWindow):
         scene_end = obj['scene_end']
         scene_embedding = obj['scene_embedding']
         scene_id = SceneModel.insert(video_file_id, scene_start, scene_end, scene_embedding)
+
+    def rebuild_scenes_index(self):
+        worker = SceneIndexBuilder()
+        self.cpu_threadpool.start(worker)
 
     def metadata_thread_complete(self, id:int, metadata:dict):
         fname, _ = FilesModel.select_file_path(id)
@@ -223,7 +229,7 @@ class MainWindow(QMainWindow):
             worker.signals.finished.connect(self.metadata_thread_complete)
             worker.signals.progress.connect(self.progress_fn)
             worker.signals.metadata_result.connect(self.update_metadata)
-            self.ffmpeg_threadpool.start(worker)
+            self.cpu_threadpool.start(worker)
 
     def update_layout(self, model, set_filter=None):
         if set_filter != None:
@@ -308,7 +314,7 @@ if __name__ == "__main__":
         if sys.platform == 'darwin':
             app.setStyle("Fusion")
         else:
-            qdarktheme.setup_theme('auto')
+            qdarktheme.setup_theme('dark')
 
     if not con.open():
         QMessageBox.critical(

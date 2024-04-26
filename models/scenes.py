@@ -31,7 +31,7 @@ class SceneModel(QAbstractTableModel):
         self.fields = self.setup_db()
         self.db_model = QSqlTableModel()
         self.db_model.setTable(self.table_name)
-        self.ffmpeg_threadpool = None
+        self.cpu_threadpool = None
         self.ui = ui
         self.time_sum = 0.
         self.timeit_cnt = 0
@@ -75,7 +75,7 @@ class SceneModel(QAbstractTableModel):
                 worker.signals.error.connect(self.print_error)
                 worker.signals.result.connect(self.frame_extracted)
                 worker.signals.finished.connect(self.timeit)
-                self.ffmpeg_threadpool.start(worker)
+                self.cpu_threadpool.start(worker)
             return pix
 
     def rowCount(self, index):
