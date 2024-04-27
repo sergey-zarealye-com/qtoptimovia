@@ -42,14 +42,22 @@ class SearchResult(SceneModel):
                         'video_files.width',
                         'video_files.height',
                        ]
-        self.q_tpl = f"""SELECT {','.join(self.fields)} FROM scenes 
+        self.q_tpl = f"""SELECT {','.join(self.fields)} ,
+                        INSTR(',%s,)', ',' || scenes.id || ',') AS sorter
+                        FROM scenes 
                         JOIN video_files ON video_files.id = scenes.video_file_id
-                        WHERE scenes.id IN (%s)"""
+                        WHERE scenes.id IN (%s) """
+        self.count_tpl = f"""SELECT COUNT(scenes.id) FROM scenes 
+                                JOIN video_files ON video_files.id = scenes.video_file_id
+                                WHERE scenes.id IN (%s)"""
         self.ui = ui
         self.page = page
         self.time_sum = 0.
         self.timeit_cnt = 0
         self.cpu_threadpool = None
+        self.limit = 10
+        self.offset = 0
+        self.total_results = 0
 
     def columnCount(self, index):
         if index.isValid():
@@ -74,21 +82,50 @@ class SearchResult(SceneModel):
 
     def set_results(self, scene_id_list, is_include_horizontal, is_include_vertical,
                     created_at_from, created_at_to, imported_at_from, imported_at_to):
-        q = self.q_tpl % ','.join([str(i) for i in scene_id_list])
+        indexes = ','.join([str(i) for i in scene_id_list])
+        q = self.q_tpl % (indexes, indexes)
+        count = self.count_tpl % ','.join([str(i) for i in scene_id_list])
         if is_include_horizontal != is_include_vertical:
             if is_include_horizontal:
                 q += " AND video_files.width > video_files.height "
+                count += " AND video_files.width > video_files.height "
             if is_include_vertical:
                 q += " AND video_files.width < video_files.height "
+                count += " AND video_files.width < video_files.height "
         if created_at_from < created_at_to:
             q += f" AND video_files.created_at >= DATE('{created_at_from.toString('yyyy-MM-dd')}')" \
+                 f" AND video_files.created_at <= DATE('{created_at_to.toString('yyyy-MM-dd')}') "
+            count += f" AND video_files.created_at >= DATE('{created_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.created_at <= DATE('{created_at_to.toString('yyyy-MM-dd')}') "
         if imported_at_from < imported_at_to:
             q += f" AND video_files.imported_at >= DATE('{imported_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.imported_at <= DATE('{imported_at_to.toString('yyyy-MM-dd')}') "
+            count += f" AND video_files.imported_at >= DATE('{imported_at_from.toString('yyyy-MM-dd')}')" \
+                 f" AND video_files.imported_at <= DATE('{imported_at_to.toString('yyyy-MM-dd')}') "
+
+        q += "AND sorter > 0 ORDER BY sorter "
+        q += f"LIMIT {self.limit} OFFSET {self.offset}"
+
+        count_q = QSqlQuery()
+        count_q.exec(count)
+        if count_q.first():
+            self.total_results = count_q.value(0)
 
         self.db_model.setQuery(q)
 
+    def goback(self):
+        self.offset = max(0, self.offset - self.limit)
+        page = self.offset // self.limit
+        back_disable = page == 0
+        fwd_disable = self.offset >= self.total_results - self.limit
+        return page, back_disable, fwd_disable
+
+    def gofwd(self):
+        self.offset = max(0, min(self.total_results - self.limit, self.offset + self.limit))
+        page = self.offset // self.limit
+        back_disable = page == 0
+        fwd_disable = self.offset >= self.total_results - self.limit
+        return page, back_disable, fwd_disable
 
 
 

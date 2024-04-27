@@ -48,7 +48,7 @@ class ExtSearcher(QRunnable):
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
-            self.signals.result.emit(1, scene_index_list)
+            self.signals.result.emit(0, scene_index_list)
         else:
             self.signals.result.emit(0, scene_index_list)
 
@@ -60,7 +60,7 @@ class ExtSearcher(QRunnable):
             text_features /= norm
         return text_features.squeeze(0).detach().cpu().numpy()
 
-    def get_knn(self, vector, k=10):
+    def get_knn(self, vector, k=500):
         fname = os.path.join('data', 'scenes.idx')
         index = nmslib.init(method='hnsw', space='l2')
         try:
@@ -72,5 +72,4 @@ class ExtSearcher(QRunnable):
                 traceback.format_exc(),
             )
         ids, distances = index.knnQuery(vector, k=k)
-        print(distances)
         return ids

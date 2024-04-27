@@ -37,6 +37,9 @@ class ExtSearchUI:
 
         self.search_results_toolbar = QToolBar()
         self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add to montage")
+        self.goback_action = QAction(QIcon("icons/arrow-180.png"), "Back")
+        self.gofwd_action = QAction(QIcon("icons/arrow.png"), "Forward")
+        self.pager = QLabel('1')
 
         self.scenes_toolbar = QToolBar()
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
@@ -94,7 +97,14 @@ class ExtSearchUI:
     def setup_search_results_toolbar(self):
         self.search_results_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.search_results_toolbar.addWidget(get_fixed_spacer())
-        self.search_results_toolbar.addWidget(QLabel('<h3>Search results</h3>'))
+        self.goback_action.setDisabled(True)
+        self.gofwd_action.setDisabled(True)
+        self.goback_action.setText('')
+        self.gofwd_action.setText('')
+        self.pager.setFixedWidth(20)
+        self.search_results_toolbar.addAction(self.goback_action)
+        self.search_results_toolbar.addWidget(self.pager)
+        self.search_results_toolbar.addAction(self.gofwd_action)
         self.search_results_toolbar.addWidget(get_horizontal_spacer())
         self.search_results_toolbar.addAction(self.to_montage_action)
         self.search_results_toolbar.addWidget(get_fixed_spacer())

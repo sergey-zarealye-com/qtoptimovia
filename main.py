@@ -167,9 +167,12 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].search_action.triggered.connect(self.search_scenes)
         self.ui.pages[4].description.returnPressed.connect(self.search_scenes)
         self.ui.pages[4].search_results_view.clicked.connect(self.show_found_scenes)
+        self.ui.pages[4].goback_action.triggered.connect(self.search_results_back)
+        self.ui.pages[4].gofwd_action.triggered.connect(self.search_results_fwd)
 
         # Stubs
         self.video_files_in_directory = None
+        self.found_scene_id_list = []
 
         self.ui.pages[0].scenes_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[1].scenes_list_model.cpu_threadpool = self.cpu_threadpool
@@ -204,16 +207,16 @@ class MainWindow(QMainWindow):
 
     def search_scenes(self):
         self.show_search_results(0, [])
+        self.ui.pages[4].search_results_model.offset = 0
         prompt = self.ui.pages[4].description.text()
         prompt = prompt.strip()
         if len(prompt):
             worker = ExtSearcher(prompt=prompt)
             worker.signals.result.connect(self.show_search_results)
             self.gpu_threadpool.start(worker)
-        # else:
-        #     self.show_search_results(0, [])
 
-    def show_search_results(self, ret_code:int, scene_id_list:list):
+    def show_search_results(self, page:int, scene_id_list:list):
+        self.found_scene_id_list = scene_id_list
         is_include_horizontal = self.ui.pages[4].include_horizontal.isChecked()
         is_include_vertical = self.ui.pages[4].include_vertical.isChecked()
         created_at_from = self.ui.pages[4].created_at_from.date()
@@ -225,6 +228,21 @@ class MainWindow(QMainWindow):
                                                           created_at_from, created_at_to,
                                                           imported_at_from, imported_at_to)
         self.ui.pages[4].search_results_model.layoutChanged.emit()
+        self.ui.pages[4].pager.setText(str(page + 1))
+        if page == 0:
+            self.ui.pages[4].gofwd_action.setDisabled(False)
+
+    def search_results_back(self):
+        page, back_disable, fwd_disable = self.ui.pages[4].search_results_model.goback()
+        self.ui.pages[4].goback_action.setDisabled(back_disable)
+        self.ui.pages[4].gofwd_action.setDisabled(fwd_disable)
+        self.show_search_results(page, self.found_scene_id_list)
+
+    def search_results_fwd(self):
+        page, back_disable, fwd_disable = self.ui.pages[4].search_results_model.gofwd()
+        self.ui.pages[4].goback_action.setDisabled(back_disable)
+        self.ui.pages[4].gofwd_action.setDisabled(fwd_disable)
+        self.show_search_results(page, self.found_scene_id_list)
 
     def metadata_thread_complete(self, id:int, metadata:dict):
         fname, _ = FilesModel.select_file_path(id)
