@@ -43,7 +43,7 @@ class SceneIndexBuilder(QRunnable):
             self.con.close()
 
     def index_rebuild(self):
-        self.con = QSqlDatabase.addDatabase("QSQLITE")
+        self.con = QSqlDatabase.addDatabase("QSQLITE", "indexer_db_connection")
         self.con.setDatabaseName("data/optimovia.db")
         self.con.setConnectOptions("QSQLITE_OPEN_READONLY")
         if not self.con.open():
@@ -61,7 +61,7 @@ class SceneIndexBuilder(QRunnable):
         index.saveIndex(fname)
 
     def iterate_embeddings_batch(self):
-        select_query = QSqlQuery()
+        select_query = QSqlQuery(db=self.con)
         lim = 25
         offset = 0
         while True:

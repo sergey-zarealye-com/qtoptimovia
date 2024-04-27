@@ -35,18 +35,18 @@ class ThumbnailsWorker(QRunnable):
         self.cache_key = self.kwargs['cache_key']
         self.frame = None
 
-
     @pyqtSlot()
     def run(self):
         t = 10000.
+        t0 = time()
+        cap = cv2.VideoCapture(self.fname)
         try:
-            t0 = time()
-            cap = cv2.VideoCapture(self.fname)
-            if cap.isOpened():
-                cap.set(cv2.CAP_PROP_POS_MSEC, self.time_stamp * 1000)
-                ret, bgr_frame = cap.retrieve()
-                self.frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-                t = time() - t0
+            cap.set(cv2.CAP_PROP_POS_MSEC, self.time_stamp * 1000)
+            ret, bgr_frame = cap.retrieve()
+            self.frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+            h, w = self.frame.shape[:2]
+            self.frame = cv2.resize(self.frame, (256, h*256//w), cv2.INTER_NEAREST)
+            t = time() - t0
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]

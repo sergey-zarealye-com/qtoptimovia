@@ -93,17 +93,19 @@ class SearchResult(SceneModel):
                 q += " AND video_files.width < video_files.height "
                 count += " AND video_files.width < video_files.height "
         if created_at_from < created_at_to:
+            created_at_to = created_at_to.addDays(1)
             q += f" AND video_files.created_at >= DATE('{created_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.created_at <= DATE('{created_at_to.toString('yyyy-MM-dd')}') "
             count += f" AND video_files.created_at >= DATE('{created_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.created_at <= DATE('{created_at_to.toString('yyyy-MM-dd')}') "
         if imported_at_from < imported_at_to:
+            imported_at_to = imported_at_to.addDays(1)
             q += f" AND video_files.imported_at >= DATE('{imported_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.imported_at <= DATE('{imported_at_to.toString('yyyy-MM-dd')}') "
             count += f" AND video_files.imported_at >= DATE('{imported_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.imported_at <= DATE('{imported_at_to.toString('yyyy-MM-dd')}') "
 
-        q += "AND sorter > 0 ORDER BY sorter "
+        q += "AND sorter > 0 ORDER BY sorter "  # https://dba.stackexchange.com/questions/302006/sqlite-return-rows-in-select-in-order
         q += f"LIMIT {self.limit} OFFSET {self.offset}"
 
         count_q = QSqlQuery()

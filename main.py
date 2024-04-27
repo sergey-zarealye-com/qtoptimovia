@@ -206,7 +206,8 @@ class MainWindow(QMainWindow):
         self.cpu_threadpool.start(worker)
 
     def search_scenes(self):
-        self.show_search_results(0, [])
+        # self.show_search_results(0, [])
+        # self.update_layout(self.ui.pages[4].scenes_list_model, set_filter="0")
         self.ui.pages[4].search_results_model.offset = 0
         prompt = self.ui.pages[4].description.text()
         prompt = prompt.strip()
@@ -349,8 +350,12 @@ class MainWindow(QMainWindow):
         self.ui.col2_stack_widget.setCurrentIndex(index)
         self.ui.col3_stack_widget.setCurrentIndex(index)
 
+def except_hook(cls, exception, traceback):
+    sys.__excepthook__(cls, exception, traceback)
 
 if __name__ == "__main__":
+    sys.excepthook = except_hook
+
     con = QSqlDatabase.addDatabase("QSQLITE")
     con.setDatabaseName("data/optimovia.db")
 
