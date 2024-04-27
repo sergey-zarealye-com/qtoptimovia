@@ -203,17 +203,27 @@ class MainWindow(QMainWindow):
         self.cpu_threadpool.start(worker)
 
     def search_scenes(self):
+        self.show_search_results(0, [])
         prompt = self.ui.pages[4].description.text()
         prompt = prompt.strip()
         if len(prompt):
             worker = ExtSearcher(prompt=prompt)
             worker.signals.result.connect(self.show_search_results)
             self.gpu_threadpool.start(worker)
-        else:
-            self.show_search_results(0, [])
+        # else:
+        #     self.show_search_results(0, [])
 
     def show_search_results(self, ret_code:int, scene_id_list:list):
-        self.ui.pages[4].search_results_model.set_results(scene_id_list)
+        is_include_horizontal = self.ui.pages[4].include_horizontal.isChecked()
+        is_include_vertical = self.ui.pages[4].include_vertical.isChecked()
+        created_at_from = self.ui.pages[4].created_at_from.date()
+        created_at_to = self.ui.pages[4].created_at_to.date()
+        imported_at_from = self.ui.pages[4].imported_at_from.date()
+        imported_at_to = self.ui.pages[4].imported_at_to.date()
+        self.ui.pages[4].search_results_model.set_results(scene_id_list,
+                                                          is_include_horizontal, is_include_vertical,
+                                                          created_at_from, created_at_to,
+                                                          imported_at_from, imported_at_to)
         self.ui.pages[4].search_results_model.layoutChanged.emit()
 
     def metadata_thread_complete(self, id:int, metadata:dict):

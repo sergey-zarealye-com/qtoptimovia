@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QDir, QAbstractTableModel, QByteArray
+from PyQt5.QtCore import Qt, QDir, QAbstractTableModel, QByteArray, QDate
 from PyQt5.QtGui import QPixmapCache, QPixmap, QImage
 from PyQt5.QtWidgets import QFileSystemModel, QMessageBox
 from PyQt5.QtSql import QSqlQuery, QSqlTableModel
@@ -163,6 +163,18 @@ class FilesModel(QAbstractTableModel):
             CREATE INDEX IF NOT EXISTS idx_{self.table_name}_import_name ON {self.table_name}(import_name)
             """
         )
+        create_idx_query3 = QSqlQuery()
+        create_idx_query3.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_{self.table_name}_created_at ON {self.table_name}(created_at)
+            """
+        )
+        create_idx_query4 = QSqlQuery()
+        create_idx_query4.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_{self.table_name}_imported_at ON {self.table_name}(imported_at)
+            """
+        )
         return ['id' ,
                 'import_name' ,
                 'import_dir' ,
@@ -318,3 +330,25 @@ class FilesModel(QAbstractTableModel):
         while select_query.next():
             out.append(select_query.value(0))
         return out
+
+    @staticmethod
+    def get_minmax_dates():
+        select_query = QSqlQuery()
+        q = "SELECT STRFTIME('%Y-%m-%d', MIN(imported_at)), " +\
+             "STRFTIME('%Y-%m-%d', MAX(imported_at)), " \
+             "STRFTIME('%Y-%m-%d', MIN(created_at)), " \
+             "STRFTIME('%Y-%m-%d', MAX(created_at)) " \
+             "FROM video_files"
+        select_query.exec(q)
+        if select_query.first():
+            created_at_min = QDate.fromString(select_query.value(2), 'yyyy-MM-dd')
+            created_at_max = QDate.fromString(select_query.value(3), 'yyyy-MM-dd')
+            imported_at_min = QDate.fromString(select_query.value(0), 'yyyy-MM-dd')
+            imported_at_max = QDate.fromString(select_query.value(1), 'yyyy-MM-dd')
+            if created_at_min == created_at_max:
+                created_at_max = created_at_max.addDays(1)
+            if imported_at_min == imported_at_max:
+                imported_at_max = imported_at_max.addDays(1)
+            return imported_at_min, imported_at_max, created_at_min, created_at_max
+        else:
+            return [None] * 4

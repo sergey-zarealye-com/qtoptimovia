@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
                              QDateEdit, QCheckBox, QToolBar, QAction, QTableView)
 from PyQt5.QtCore import QDate, Qt, QSize
 
+from models.files import FilesModel
 from models.scenes import SceneModel
 from models.search_results import SearchResult
 from ui.common import get_fixed_spacer, get_horizontal_spacer, c_setup_scenes_toolbar, setup_scenes_view
@@ -11,12 +12,19 @@ from ui.common import get_fixed_spacer, get_horizontal_spacer, c_setup_scenes_to
 
 class ExtSearchUI:
     def __init__(self):
+
+        imported_at_min, imported_at_max, created_at_min, created_at_max = FilesModel.get_minmax_dates()
+
         # Form fields
         self.description = QLineEdit()
         self.include_horizontal = QCheckBox()
         self.include_vertical = QCheckBox()
         self.include_horizontal.setChecked(True)
         self.include_vertical.setChecked(True)
+        self.created_at_from = QDateEdit(created_at_min)
+        self.created_at_to = QDateEdit(created_at_max)
+        self.imported_at_from = QDateEdit(imported_at_min)
+        self.imported_at_to = QDateEdit(imported_at_max)
 
         #Views
         self.search_results_view = QTableView()
@@ -44,11 +52,11 @@ class ExtSearchUI:
             form_layout = QFormLayout()
             form_layout.addRow(win.tr("Description:"), self.description)
             form_layout.addRow(QLabel(win.tr("Filming date")))
-            form_layout.addRow(win.tr("From:"), QDateEdit(QDate.currentDate()))
-            form_layout.addRow(win.tr("To:"), QDateEdit(QDate.currentDate()))
+            form_layout.addRow(win.tr("From:"), self.created_at_from)
+            form_layout.addRow(win.tr("To:"), self.created_at_to)
             form_layout.addRow(QLabel(win.tr("Import date")))
-            form_layout.addRow(win.tr("From:"), QDateEdit(QDate.currentDate()))
-            form_layout.addRow(win.tr("To:"), QDateEdit(QDate.currentDate()))
+            form_layout.addRow(win.tr("From:"), self.imported_at_from)
+            form_layout.addRow(win.tr("To:"), self.imported_at_to)
             form_layout.addRow(win.tr("Horizontal:"), self.include_horizontal)
             form_layout.addRow(win.tr("Vertical:"), self.include_vertical)
 
