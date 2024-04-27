@@ -206,8 +206,8 @@ class MainWindow(QMainWindow):
         self.cpu_threadpool.start(worker)
 
     def search_scenes(self):
-        # self.show_search_results(0, [])
-        # self.update_layout(self.ui.pages[4].scenes_list_model, set_filter="0")
+        self.show_search_results(0, [])
+        self.update_layout(self.ui.pages[4].scenes_list_model, set_filter="0")
         self.ui.pages[4].search_results_model.offset = 0
         prompt = self.ui.pages[4].description.text()
         prompt = prompt.strip()
