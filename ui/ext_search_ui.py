@@ -20,7 +20,7 @@ class ExtSearchUI:
 
         #Views
         self.search_results_view = QTableView()
-        self.search_results_model = SearchResult(self)
+        self.search_results_model = SearchResult(self, 4)
         self.scenes_list_view = QTableView()
         self.scenes_list_model = SceneModel(self)
 

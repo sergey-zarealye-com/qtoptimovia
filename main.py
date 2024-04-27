@@ -18,6 +18,7 @@ from ui.archive_ui import ArchiveUI
 from ui.montage_ui import MontageUI
 from ui.ext_search_ui import ExtSearchUI
 from models.files import FilesModel
+from ui.status_bar import setup_statusbar
 from workers.ext_searcher import ExtSearcher
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
@@ -61,6 +62,8 @@ class MainWindowUI:
         self.statusbar = QStatusBar()
         menubar = QMenuBar()
         self.tool_btn_settings = QToolButton()
+        self.cpu_threads_pb = QProgressBar()
+        self.gpu_threads_pb = QProgressBar()
 
         # Setup Actions
         for action in self.actions_sidebar:
@@ -102,21 +105,7 @@ class MainWindowUI:
         content_widget.setLayout(content_layout)
         self.central_window.setCentralWidget(content_widget)
 
-        layout = QHBoxLayout()
-        sb_widget = QWidget()
-        sb_widget.setLayout(layout)
-
-        self.timeit_label = QLabel('Timeit:')
-
-        self.ffmpeg_threads_pb = QProgressBar()
-        self.ffmpeg_threads_pb.setMinimum(0)
-        self.ffmpeg_threads_pb.setTextVisible(False)
-        self.ffmpeg_threads_pb.setFixedHeight(5)
-        self.ffmpeg_threads_pb.setFixedWidth(100)
-
-        layout.addWidget(self.ffmpeg_threads_pb)
-        layout.addWidget(self.timeit_label)
-        self.statusbar.addWidget(sb_widget)
+        self.statusbar.addWidget(setup_statusbar(self))
 
         # TODO resume paused files import from the position of scene
         self.timer = QTimer()
@@ -129,9 +118,10 @@ class MainWindowUI:
         main_win.setStatusBar(self.statusbar)
 
     def update_statusbar(self):
-        self.ffmpeg_threads_pb.setMaximum(self.main_win.cpu_threadpool.maxThreadCount())
-        cnt = self.main_win.cpu_threadpool.activeThreadCount()
-        self.ffmpeg_threads_pb.setValue(cnt)
+        cnt_cpu = self.main_win.cpu_threadpool.activeThreadCount()
+        self.cpu_threads_pb.setValue(cnt_cpu)
+        cnt_gpu = self.main_win.gpu_threadpool.activeThreadCount()
+        self.gpu_threads_pb.setValue(cnt_gpu)
         if self.pages[0].scenes_list_model.timeit_cnt > 0:
             mtime = self.pages[0].scenes_list_model.time_sum / self.pages[0].scenes_list_model.timeit_cnt
             self.timeit_label.setText(f"Timeit: {mtime / 1e6:.2f}")
@@ -141,6 +131,12 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
+
+        # Workers
+        self.cpu_threadpool = QThreadPool()
+        self.cpu_threadpool.setMaxThreadCount(4)  # 4
+        self.gpu_threadpool = QThreadPool()
+        self.gpu_threadpool.setMaxThreadCount(1)  # 1
 
         self.ui = MainWindowUI(self)
 
@@ -169,15 +165,11 @@ class MainWindow(QMainWindow):
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_scenes)
+        self.ui.pages[4].description.returnPressed.connect(self.search_scenes)
+        self.ui.pages[4].search_results_view.clicked.connect(self.show_found_scenes)
 
         # Stubs
         self.video_files_in_directory = None
-
-        # Workers
-        self.cpu_threadpool = QThreadPool()
-        self.cpu_threadpool.setMaxThreadCount(4) #4
-        self.gpu_threadpool = QThreadPool()
-        self.gpu_threadpool.setMaxThreadCount(1) #1
 
         self.ui.pages[0].scenes_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[1].scenes_list_model.cpu_threadpool = self.cpu_threadpool
@@ -261,6 +253,12 @@ class MainWindow(QMainWindow):
 
     def show_scenes(self, signal):
         video_file_id_idx = signal.siblingAtColumn(0)
+        video_file_id = signal.model().db_model.data(video_file_id_idx)
+        page = signal.model().page
+        self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
+
+    def show_found_scenes(self, signal):
+        video_file_id_idx = signal.siblingAtColumn(1)
         video_file_id = signal.model().db_model.data(video_file_id_idx)
         page = signal.model().page
         self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")

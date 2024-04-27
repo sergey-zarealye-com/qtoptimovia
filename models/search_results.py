@@ -26,7 +26,7 @@ class SearchResult(SceneModel):
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
 
-    def __init__(self, ui):
+    def __init__(self, ui, page):
         super(SceneModel, self).__init__()
         self.table_name = 'scenes'
         self.db_model = QSqlQueryModel()
@@ -40,6 +40,7 @@ class SearchResult(SceneModel):
                        ]
         self.q_tpl = f"SELECT {','.join(self.fields)} FROM scenes where id IN (%s)"
         self.ui = ui
+        self.page = page
         self.time_sum = 0.
         self.timeit_cnt = 0
         self.cpu_threadpool = None
