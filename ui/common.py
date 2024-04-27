@@ -52,7 +52,7 @@ def setup_scenes_view(view, model):
     horizontal_header.swapSections(3,4)
     horizontal_header.swapSections(4,5)
     horizontal_header.swapSections(5,6)
-    horizontal_header.hide()
+    # horizontal_header.hide()
     vertical_header.hide()
 
     for i, f in enumerate(model.fields):

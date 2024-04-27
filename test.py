@@ -1,29 +1,14 @@
-import sys
-
-from PyQt5.QtWidgets import QApplication, QGridLayout, QPushButton, QStyle, QWidget
-
-
-class Window(QWidget):
-    def __init__(self):
-        super(Window, self).__init__()
-
-        icons = sorted([attr for attr in dir(QStyle) if attr.startswith("SP_")])
-        layout = QGridLayout()
-
-        for n, name in enumerate(icons):
-            btn = QPushButton(name)
-
-            pixmapi = getattr(QStyle, name)
-            icon = self.style().standardIcon(pixmapi)
-            btn.setIcon(icon)
-            layout.addWidget(btn, n // 4, n % 4)
-
-        self.setLayout(layout)
+import numpy as np
+import nmslib
+import os
 
 
-app = QApplication(sys.argv)
+fname = os.path.join('data', 'scenes.idx')
+index = nmslib.init(method='hnsw', space='cosinesimil')
+index.loadIndex(fname)
 
-w = Window()
-w.show()
+data = np.random.random(512)
+ids, distances = index.knnQuery(data, k=10)
 
-app.exec_()
+print(ids)
+print(distances)

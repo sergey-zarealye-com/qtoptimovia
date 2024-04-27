@@ -7,7 +7,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import QMessageBox
 
-from models.scenes import SceneModel
 from workers.worker_signals import WorkerSignals
 
 
@@ -32,8 +31,6 @@ class SceneIndexBuilder(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
 
-
-
     @pyqtSlot()
     def run(self):
         try:
@@ -57,7 +54,7 @@ class SceneIndexBuilder(QRunnable):
             )
             sys.exit(1)
         fname = os.path.join('data', 'scenes.idx')
-        index = nmslib.init(method='hnsw', space='cosinesimil')
+        index = nmslib.init(method='hnsw', space='l2')
         for id_list, data in self.iterate_embeddings_batch():
             index.addDataPointBatch(data, id_list)
         index.createIndex({'post': 2}, print_progress=True)

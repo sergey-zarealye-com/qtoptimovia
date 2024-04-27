@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
 from PyQt5.QtCore import QDate, Qt, QSize
 
 from models.scenes import SceneModel
+from models.search_results import SearchResult
 from ui.common import get_fixed_spacer, get_horizontal_spacer, c_setup_scenes_toolbar, setup_scenes_view
 
 
@@ -19,7 +20,7 @@ class ExtSearchUI:
 
         #Views
         self.search_results_view = QTableView()
-        self.search_results_model = SceneModel(self)
+        self.search_results_model = SearchResult(self)
         self.scenes_list_view = QTableView()
         self.scenes_list_model = SceneModel(self)
 
@@ -41,15 +42,15 @@ class ExtSearchUI:
             self.setup_search_form_toolbar()
             layout.setMenuBar(self.search_form_toolbar)
             form_layout = QFormLayout()
-            form_layout.addRow(win.tr("&Description:"), self.description)
+            form_layout.addRow(win.tr("Description:"), self.description)
             form_layout.addRow(QLabel(win.tr("Filming date")))
-            form_layout.addRow(win.tr("&From:"), QDateEdit(QDate.currentDate()))
-            form_layout.addRow(win.tr("&To:"), QDateEdit(QDate.currentDate()))
+            form_layout.addRow(win.tr("From:"), QDateEdit(QDate.currentDate()))
+            form_layout.addRow(win.tr("To:"), QDateEdit(QDate.currentDate()))
             form_layout.addRow(QLabel(win.tr("Import date")))
-            form_layout.addRow(win.tr("&From:"), QDateEdit(QDate.currentDate()))
-            form_layout.addRow(win.tr("&To:"), QDateEdit(QDate.currentDate()))
-            form_layout.addRow(win.tr("&Horizontal:"), self.include_horizontal)
-            form_layout.addRow(win.tr("&Vertical:"), self.include_vertical)
+            form_layout.addRow(win.tr("From:"), QDateEdit(QDate.currentDate()))
+            form_layout.addRow(win.tr("To:"), QDateEdit(QDate.currentDate()))
+            form_layout.addRow(win.tr("Horizontal:"), self.include_horizontal)
+            form_layout.addRow(win.tr("Vertical:"), self.include_vertical)
 
             groupBox = QGroupBox()
             groupBox.setLayout(form_layout)

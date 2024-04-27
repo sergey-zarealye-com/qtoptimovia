@@ -18,6 +18,7 @@ from ui.archive_ui import ArchiveUI
 from ui.montage_ui import MontageUI
 from ui.ext_search_ui import ExtSearchUI
 from models.files import FilesModel
+from workers.ext_searcher import ExtSearcher
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
 from workers.video_import import VideoImportWorker
@@ -166,6 +167,9 @@ class MainWindow(QMainWindow):
         self.ui.pages[0].tree.clicked.connect(self.show_files_for_date)
         self.ui.pages[0].files_list_view.clicked.connect(self.show_scenes)
 
+        # Search form signals:
+        self.ui.pages[4].search_action.triggered.connect(self.search_scenes)
+
         # Stubs
         self.video_files_in_directory = None
 
@@ -179,6 +183,10 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].scenes_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[0].files_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[1].files_list_model.cpu_threadpool = self.cpu_threadpool
+
+        self.ui.pages[4].search_results_model.cpu_threadpool = self.cpu_threadpool
+        self.ui.pages[4].scenes_list_model.cpu_threadpool = self.cpu_threadpool
+
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
@@ -201,6 +209,20 @@ class MainWindow(QMainWindow):
     def rebuild_scenes_index(self):
         worker = SceneIndexBuilder()
         self.cpu_threadpool.start(worker)
+
+    def search_scenes(self):
+        prompt = self.ui.pages[4].description.text()
+        prompt = prompt.strip()
+        if len(prompt):
+            worker = ExtSearcher(prompt=prompt)
+            worker.signals.result.connect(self.show_search_results)
+            self.gpu_threadpool.start(worker)
+        else:
+            self.show_search_results(0, [])
+
+    def show_search_results(self, ret_code:int, scene_id_list:list):
+        self.ui.pages[4].search_results_model.set_results(scene_id_list)
+        self.ui.pages[4].search_results_model.layoutChanged.emit()
 
     def metadata_thread_complete(self, id:int, metadata:dict):
         fname, _ = FilesModel.select_file_path(id)
