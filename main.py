@@ -228,6 +228,8 @@ class MainWindow(QMainWindow):
                                                           is_include_horizontal, is_include_vertical,
                                                           created_at_from, created_at_to,
                                                           imported_at_from, imported_at_to)
+        self.ui.pages[4].search_results_view.clearSelection()
+        self.update_layout(self.ui.pages[4].scenes_list_model, set_filter="0")
         self.ui.pages[4].search_results_model.layoutChanged.emit()
         self.ui.pages[4].pager.setText(str(page + 1))
         if page == 0:

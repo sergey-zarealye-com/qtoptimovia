@@ -101,6 +101,8 @@ class ExtSearchUI:
         self.gofwd_action.setDisabled(True)
         self.goback_action.setText('')
         self.gofwd_action.setText('')
+        self.goback_action.setToolTip('Previous page')
+        self.gofwd_action.setToolTip('Next page')
         self.pager.setFixedWidth(20)
         self.search_results_toolbar.addAction(self.goback_action)
         self.search_results_toolbar.addWidget(self.pager)
