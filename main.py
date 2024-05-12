@@ -11,7 +11,9 @@ from PyQt5.QtSql import QSqlDatabase
 
 from models.albums import AlbumsModel
 from models.scenes import SceneModel
+from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
+from slots.files import FilesSlots
 from ui.albums_ui import AlbumsUI
 from ui.common import get_fixed_spacer, get_vertical_spacer, get_horizontal_spacer
 from ui.files_ui import FilesUI
@@ -147,6 +149,8 @@ class MainWindow(QMainWindow):
         self.resize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
 
         self.search_slots = ExtSearchSlots(self)
+        self.files_slots = FilesSlots(self)
+        self.albums_slots = AlbumsSlots(self)
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -158,19 +162,19 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].import_action.triggered.connect(self.init_importing_workers)
 
         # Files tree signals:
-        self.ui.pages[1].tree.expanded.connect(self.show_files_in_dir)
-        self.ui.pages[1].tree.clicked.connect(self.show_files_in_dir)
-        self.ui.pages[1].tree.collapsed.connect(self.collapse_files)
-        self.ui.pages[1].files_list_view.clicked.connect(self.show_scenes)
+        self.ui.pages[1].tree.expanded.connect(self.files_slots.show_files_in_dir)
+        self.ui.pages[1].tree.clicked.connect(self.files_slots.show_files_in_dir)
+        self.ui.pages[1].tree.collapsed.connect(self.files_slots.collapse_files)
+        self.ui.pages[1].files_list_view.clicked.connect(self.files_slots.show_scenes)
 
         # Albums tree signals:
-        self.ui.pages[0].tree.clicked.connect(self.show_files_for_date)
-        self.ui.pages[0].files_list_view.clicked.connect(self.show_scenes)
+        self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
+        self.ui.pages[0].files_list_view.clicked.connect(self.albums_slots.show_scenes)
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
         self.ui.pages[4].description.returnPressed.connect(self.search_slots.search_scenes)
-        self.ui.pages[4].search_results_view.clicked.connect(self.search_slots.show_found_scenes)
+        self.ui.pages[4].search_results_view.clicked.connect(self.search_slots.show_scenes)
         self.ui.pages[4].goback_action.triggered.connect(self.search_slots.search_results_back)
         self.ui.pages[4].gofwd_action.triggered.connect(self.search_slots.search_results_fwd)
 
@@ -244,58 +248,9 @@ class MainWindow(QMainWindow):
         model.db_model.select()
         model.layoutChanged.emit()
 
-    def clear_scenes_view(self, page):
-        self.update_layout(self.ui.pages[page].scenes_list_model, set_filter="0")
-        self.ui.pages[page].info_action.setDisabled(True)  # Info tool button
-
-    def show_scenes(self, signal):
-        video_file_id_idx = signal.siblingAtColumn(0)
-        video_file_id = signal.model().db_model.data(video_file_id_idx)
-        page = signal.model().page
-        self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
-        self.ui.pages[page].info_action.setEnabled(True)
-
     def import_video_files(self, signal):
         FilesModel.import_files(self.video_files_in_directory)
         self.update_layout(self.ui.pages[1].files_list_model)
-
-    def show_files_in_dir(self, signal):
-        if self.ui.pages[1].tree.isExpanded(signal):
-            dir_path = self.ui.pages[1].files_list_model.get_file_path(signal)
-            self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
-            self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
-            self.clear_scenes_view(1)
-            # Import tool button
-            self.ui.pages[1].import_action.setEnabled(len(self.video_files_in_directory) > 0)
-        else:
-            self.collapse_files(signal)
-            selected_path = self.ui.pages[1].files_list_model.fs_model.filePath(signal)
-            if os.path.isfile(selected_path):
-                dir_path, file_name = os.path.split(selected_path)
-                self.video_files_in_directory = [selected_path]
-                self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}' AND import_name='{file_name}'")
-                self.clear_scenes_view(1)
-                self.ui.pages[1].import_action.setEnabled(True)
-
-    def show_files_for_date(self, signal):
-        r = signal.row()
-        c = signal.column()
-        p = signal.parent()
-        rr = self.ui.pages[0].tree_model.index(r, c+1, p)
-        date = self.ui.pages[0].tree_model.itemFromIndex(rr).text()
-        date = date.split()
-        if len(date) == 3:
-            field = date[0]
-            year = int(date[1])
-            month = int(date[2])
-            self.update_layout(self.ui.pages[0].files_list_model, set_filter=f"strftime('%Y', {field})='{year}' AND strftime('%m', {field})='{month:02d}'")
-            self.clear_scenes_view(0)
-
-    def collapse_files(self, signal):
-        # Import tool button
-        self.ui.pages[1].import_action.setEnabled(False)
-        self.update_layout(self.ui.pages[1].files_list_model, set_filter='0')
-        self.clear_scenes_view(1)
 
     def change_page(self) -> None:
         action_name = self.sender().text()  # type: ignore

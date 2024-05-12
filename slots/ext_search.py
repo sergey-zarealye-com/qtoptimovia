@@ -1,15 +1,17 @@
+from slots.base import SlotsBase
 from workers.ext_searcher import ExtSearcher
 
 
-class ExtSearchSlots():
+class ExtSearchSlots(SlotsBase):
     def __init__(self, win):
         self.window = win
         self.ui = win.ui.pages[4]
         self.search_results = None
+        self.video_file_id_column = 1
 
     def search_scenes(self):
         self.show_search_results(0, None)
-        self.window.clear_scenes_view(4)
+        self.clear_scenes_view()
         self.ui.search_results_model.offset = 0
         prompt = self.ui.description.text()
         prompt = prompt.strip()
@@ -37,7 +39,7 @@ class ExtSearchSlots():
                                                   created_at_from, created_at_to,
                                                   imported_at_from, imported_at_to)
         self.ui.search_results_view.clearSelection()
-        self.window.clear_scenes_view(4)
+        self.clear_scenes_view()
         self.ui.search_results_model.layoutChanged.emit()
         self.ui.pager.setText(str(page + 1))
 
@@ -61,5 +63,5 @@ class ExtSearchSlots():
     def show_found_scenes(self, signal):
         video_file_id_idx = signal.siblingAtColumn(1)
         video_file_id = signal.model().db_model.data(video_file_id_idx)
-        self.window.update_layout(self.ui.scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
+        self.update_layout(self.ui.scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
         self.ui.info_action.setEnabled(True)
