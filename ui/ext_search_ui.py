@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
                              QFormLayout, QLineEdit, QGroupBox, QSizePolicy,
-                             QDateEdit, QCheckBox, QToolBar, QAction, QTableView)
+                             QDateEdit, QCheckBox, QToolBar, QAction, QTableView, QMenu)
 from PyQt5.QtCore import QDate, Qt, QSize
 import pyqtgraph as pg
 
@@ -48,6 +48,25 @@ class ExtSearchUI:
 
         self.plot_graph = pg.PlotWidget()
 
+        self.scenes_list_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.scenes_list_view.customContextMenuRequested.connect(self.show_context_menu)
+        self.scene_context_menu = QMenu()
+        self.find_similar_action = QAction('Find similar')
+        self.scene_context_menu.addAction(self.find_similar_action)
+
+        self.search_results_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.search_results_view.customContextMenuRequested.connect(self.show_context_menu_sr)
+        self.search_results_context_menu = QMenu()
+        self.find_similar_from_sr_action = QAction('Find similar')
+        self.search_results_context_menu.addAction(self.find_similar_from_sr_action)
+
+    def show_context_menu(self, pos):
+        index = self.scenes_list_view.indexAt(pos)
+        self.scene_context_menu.popup(self.scenes_list_view.viewport().mapToGlobal(pos))
+
+    def show_context_menu_sr(self, pos):
+        index = self.search_results_view.indexAt(pos)
+        self.search_results_context_menu.popup(self.search_results_view.viewport().mapToGlobal(pos))
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""

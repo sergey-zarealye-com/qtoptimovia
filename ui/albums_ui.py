@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QSizePolicy, QAbstractItemView, QTableView, \
-    QHeaderView, QToolBar, QAction
+    QHeaderView, QToolBar, QAction, QMenu
 from models.albums import AlbumsModel
 from models.files import FilesModel
 from models.scenes import SceneModel
@@ -31,6 +31,15 @@ class AlbumsUI:
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play")
         self.info_action = QAction(QIcon("icons/information.png"), "Info")
 
+        self.scenes_list_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.scenes_list_view.customContextMenuRequested.connect(self.show_context_menu)
+        self.scene_context_menu = QMenu()
+        self.find_similar_action = QAction('Find similar')
+        self.scene_context_menu.addAction(self.find_similar_action)
+
+    def show_context_menu(self, pos):
+        index = self.scenes_list_view.indexAt(pos)
+        self.scene_context_menu.popup(self.scenes_list_view.viewport().mapToGlobal(pos))
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
@@ -80,4 +89,4 @@ class AlbumsUI:
 
     def setup_scenes_toolbar(self):
         c_setup_scenes_toolbar(self.scenes_toolbar, self.info_action, self.play_action)
-
+    

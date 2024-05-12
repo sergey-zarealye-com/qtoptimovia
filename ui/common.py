@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtWidgets import (QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QApplication,
-                             QStyle, QToolButton, QLabel)
+from PyQt5.QtWidgets import (QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QStyle,
+                             QToolButton, QLabel, QApplication)
 
 from models.files import FilesModel
 from models.scenes import SceneModel

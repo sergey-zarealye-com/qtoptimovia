@@ -1,13 +1,9 @@
 from datetime import timedelta
 
-from PyQt5.QtCore import Qt, QDir, QAbstractTableModel, QVariant, QByteArray
-from PyQt5.QtSql import QSqlQuery, QSqlTableModel
-from PyQt5.QtGui import QPixmap, QImage, QPixmapCache, QColor
-
 import numpy as np
-
-import os
-
+from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, QByteArray
+from PyQt5.QtGui import QPixmap, QImage, QPixmapCache
+from PyQt5.QtSql import QSqlQuery, QSqlTableModel
 from PyQt5.QtWidgets import QMessageBox
 
 from models.files import FilesModel

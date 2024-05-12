@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
     QLabel, QToolBar, QStatusBar, QDesktopWidget,
     QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
-    QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox, QProgressBar)
+    QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox, QProgressBar, QMenu)
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
 from PyQt5.QtSql import QSqlDatabase
@@ -162,16 +162,19 @@ class MainWindow(QMainWindow):
         # Import tool button
         self.ui.pages[1].import_action.triggered.connect(self.import_slots.import_video_files)
         self.ui.pages[1].import_action.triggered.connect(self.init_importing_workers)
+        # TODO ui freezes when ffprobe workers are running
 
         # Files tree signals:
         self.ui.pages[1].tree.expanded.connect(self.files_slots.show_files_in_dir)
         self.ui.pages[1].tree.clicked.connect(self.files_slots.show_files_in_dir)
         self.ui.pages[1].tree.collapsed.connect(self.files_slots.collapse_files)
         self.ui.pages[1].files_list_view.clicked.connect(self.files_slots.show_scenes)
+        self.ui.pages[1].find_similar_action.triggered.connect(lambda o: print('trig', type(o)))
 
         # Albums tree signals:
         self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
         self.ui.pages[0].files_list_view.clicked.connect(self.albums_slots.show_scenes)
+        self.ui.pages[0].find_similar_action.triggered.connect(lambda o: print('trig', type(o)))
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
@@ -179,6 +182,8 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].search_results_view.clicked.connect(self.search_slots.show_scenes)
         self.ui.pages[4].goback_action.triggered.connect(self.search_slots.search_results_back)
         self.ui.pages[4].gofwd_action.triggered.connect(self.search_slots.search_results_fwd)
+        self.ui.pages[4].find_similar_action.triggered.connect(lambda o: print('trig', type(o)))
+        self.ui.pages[4].find_similar_from_sr_action.triggered.connect(lambda o: print('trig', type(o)))
 
         # Stubs
         self.video_files_in_directory = None
