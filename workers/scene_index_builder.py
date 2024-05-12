@@ -59,13 +59,14 @@ class SceneIndexBuilder(QRunnable):
             index.addDataPointBatch(data, id_list)
         index.createIndex({'post': 2}, print_progress=True)
         index.saveIndex(fname)
+        # TODO updated index seems to be reloaded only after app restarting
 
     def iterate_embeddings_batch(self):
         select_query = QSqlQuery(db=self.con)
         lim = 25
         offset = 0
         while True:
-            select_query.exec(f"SELECT id, scene_embedding FROM scenes LIMIT {lim} OFFSET {offset}")
+            select_query.exec(f"SELECT id, scene_embedding FROM scenes WHERE 1 LIMIT {lim} OFFSET {offset}")
             id_list, batch = [], []
             while select_query.next():
                 id = select_query.value(0)

@@ -14,6 +14,7 @@ from models.scenes import SceneModel
 from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
 from slots.files import FilesSlots
+from slots.files_import import FilesImportSlots
 from ui.albums_ui import AlbumsUI
 from ui.common import get_fixed_spacer, get_vertical_spacer, get_horizontal_spacer
 from ui.files_ui import FilesUI
@@ -151,6 +152,7 @@ class MainWindow(QMainWindow):
         self.search_slots = ExtSearchSlots(self)
         self.files_slots = FilesSlots(self)
         self.albums_slots = AlbumsSlots(self)
+        self.import_slots = FilesImportSlots(self)
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -158,7 +160,7 @@ class MainWindow(QMainWindow):
         self.ui.tool_btn_settings.clicked.connect(self.rebuild_scenes_index)
 
         # Import tool button
-        self.ui.pages[1].import_action.triggered.connect(self.import_video_files)
+        self.ui.pages[1].import_action.triggered.connect(self.import_slots.import_video_files)
         self.ui.pages[1].import_action.triggered.connect(self.init_importing_workers)
 
         # Files tree signals:
@@ -190,25 +192,15 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].search_results_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[4].scenes_list_model.cpu_threadpool = self.cpu_threadpool
 
-
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
-        self.update_layout(self.ui.pages[0].files_list_model) #
-        self.update_layout(self.ui.pages[1].files_list_model)
+        self.files_slots.update_layout(self.ui.pages[1].files_list_model)
+        self.albums_slots.update_layout(self.ui.pages[0].files_list_model)
 
     def print_output(self, s):
         print(s)
 
-    def update_metadata(self, id:int, metadata:dict):
-        FilesModel.update_fields(id, metadata)
-        self.update_layout(self.ui.pages[1].files_list_model)
-
-    def insert_scene(self, video_file_id:int, obj:dict):
-        scene_start = obj['scene_start']
-        scene_end = obj['scene_end']
-        scene_embedding = obj['scene_embedding']
-        scene_id = SceneModel.insert(video_file_id, scene_start, scene_end, scene_embedding)
-
+    # TODO call it automatically by some event
     def rebuild_scenes_index(self):
         worker = SceneIndexBuilder()
         self.cpu_threadpool.start(worker)
@@ -220,15 +212,10 @@ class MainWindow(QMainWindow):
                                    metadata=metadata,
                                 )
         worker.signals.result.connect(self.print_output)
-        worker.signals.finished.connect(self.import_thread_complete)
+        worker.signals.finished.connect(self.import_slots.import_thread_complete)
         worker.signals.progress.connect(self.progress_fn)
-        worker.signals.partial_result.connect(self.insert_scene)
+        worker.signals.partial_result.connect(self.import_slots.insert_scene)
         self.gpu_threadpool.start(worker)
-
-    def import_thread_complete(self, id: int):
-        print('finished import id:', id)
-        self.ui.pages[0].tree_model = AlbumsModel()
-        self.ui.pages[0].tree.setModel(self.ui.pages[0].tree_model)
 
     def init_importing_workers(self):
         for id in FilesModel.select_nonstarted_imports():
@@ -239,18 +226,8 @@ class MainWindow(QMainWindow):
             worker.signals.result.connect(self.print_output)
             worker.signals.finished.connect(self.metadata_thread_complete)
             worker.signals.progress.connect(self.progress_fn)
-            worker.signals.metadata_result.connect(self.update_metadata)
+            worker.signals.metadata_result.connect(self.import_slots.update_metadata)
             self.cpu_threadpool.start(worker)
-
-    def update_layout(self, model, set_filter=None):
-        if set_filter != None:
-            model.db_model.setFilter(set_filter)
-        model.db_model.select()
-        model.layoutChanged.emit()
-
-    def import_video_files(self, signal):
-        FilesModel.import_files(self.video_files_in_directory)
-        self.update_layout(self.ui.pages[1].files_list_model)
 
     def change_page(self) -> None:
         action_name = self.sender().text()  # type: ignore
