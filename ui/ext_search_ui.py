@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
                              QFormLayout, QLineEdit, QGroupBox, QSizePolicy,
                              QDateEdit, QCheckBox, QToolBar, QAction, QTableView)
 from PyQt5.QtCore import QDate, Qt, QSize
+import pyqtgraph as pg
 
 from models.files import FilesModel
 from models.scenes import SceneModel
@@ -43,6 +44,9 @@ class ExtSearchUI:
 
         self.scenes_toolbar = QToolBar()
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
+        self.info_action = QAction(QIcon("icons/information.png"), "Info")
+
+        self.plot_graph = pg.PlotWidget()
 
 
     def setup_ui(self, win: QWidget, col: int) -> None:
@@ -65,9 +69,13 @@ class ExtSearchUI:
 
             groupBox = QGroupBox()
             groupBox.setLayout(form_layout)
-            groupBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            groupBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
             layout.addWidget(groupBox)
+
+            self.plot_graph.showGrid(x=True, y=True)
+            layout.addWidget(self.plot_graph)
+
 
         elif col == 1:
             self.setup_search_results_toolbar()
@@ -115,4 +123,4 @@ class ExtSearchUI:
         self.to_montage_action.setDisabled(True)
 
     def setup_scenes_toolbar(self):
-        c_setup_scenes_toolbar(self.scenes_toolbar, self.play_action)
+        c_setup_scenes_toolbar(self.scenes_toolbar, self.info_action, self.play_action)

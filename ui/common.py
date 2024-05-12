@@ -77,11 +77,12 @@ def c_setup_scenes_toolbar(tb, *actions):
     tb.addWidget(get_fixed_spacer())
     tb.addWidget(QLabel('<h3>Scenes</h3>'))
     tb.addWidget(get_horizontal_spacer())
-    tb.addAction(actions[0])
+    for action in actions:
+        tb.addAction(action)
+        action.setDisabled(True)
     tb.addWidget(get_fixed_spacer())
     tb.setIconSize(QSize(16, 16))
     tb.setMovable(False)
-    actions[0].setDisabled(True)
 
 def get_fixed_spacer():
     spacer = QToolButton()

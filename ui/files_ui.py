@@ -27,6 +27,7 @@ class FilesUI:
 
         self.scenes_toolbar = QToolBar()
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
+        self.info_action = QAction(QIcon("icons/information.png"), "Info")
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         widget_container = QWidget()
@@ -67,5 +68,5 @@ class FilesUI:
         c_setup_video_files_toolbar(self.video_files_toolbar, self.to_album_action, self.to_montage_action)
 
     def setup_scenes_toolbar(self):
-        c_setup_scenes_toolbar(self.scenes_toolbar, self.play_action)
+        c_setup_scenes_toolbar(self.scenes_toolbar, self.info_action, self.play_action)
 

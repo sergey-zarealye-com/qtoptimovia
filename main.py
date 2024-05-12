@@ -11,6 +11,7 @@ from PyQt5.QtSql import QSqlDatabase
 
 from models.albums import AlbumsModel
 from models.scenes import SceneModel
+from slots.ext_search import ExtSearchSlots
 from ui.albums_ui import AlbumsUI
 from ui.common import get_fixed_spacer, get_vertical_spacer, get_horizontal_spacer
 from ui.files_ui import FilesUI
@@ -42,12 +43,13 @@ class MainWindowUI:
         sep1 = QAction()
         sep1.setSeparator(True)
         self.actions_sidebar = (
-            QAction(QIcon("icons/command.svg"), "Your albums"),
-            QAction(QIcon("icons/disk.svg"), "Your local video files"),
-            QAction(QIcon("icons/binoculars.svg"), "Your archive storage"),
-            QAction(QIcon("icons/clip.svg"), "Video montage"),
+            QAction(QIcon("icons/blue-folder-horizontal-open.png"), "Your albums"),
+            QAction(QIcon("icons/film.png"), "Your local video files"),
+            QAction(QIcon("icons/inbox-film.png"), "Your archive storage"),
+            QAction(QIcon("icons/magnifier.png"), "Extended search"),
             sep1,
-            QAction(QIcon("icons/find.svg"), "Extended search"),
+            QAction(QIcon("icons/scissors-blue.png"), "Video montage"),
+
         )
 
         action_group_toolbar = QActionGroup(main_win)
@@ -78,7 +80,7 @@ class MainWindowUI:
         sidebar.addWidget(get_vertical_spacer())
         sidebar.addWidget(self.tool_btn_settings)
 
-        self.tool_btn_settings.setIcon(QIcon("icons/hammer.svg"))
+        self.tool_btn_settings.setIcon(QIcon("icons/gear.png"))
 
         self.pages = []
 
@@ -144,6 +146,8 @@ class MainWindow(QMainWindow):
         geometry = QDesktopWidget().availableGeometry(screen = -1)
         self.resize(int(geometry.width() * 0.8), int(geometry.height() * 0.7))
 
+        self.search_slots = ExtSearchSlots(self)
+
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
 
@@ -164,11 +168,11 @@ class MainWindow(QMainWindow):
         self.ui.pages[0].files_list_view.clicked.connect(self.show_scenes)
 
         # Search form signals:
-        self.ui.pages[4].search_action.triggered.connect(self.search_scenes)
-        self.ui.pages[4].description.returnPressed.connect(self.search_scenes)
-        self.ui.pages[4].search_results_view.clicked.connect(self.show_found_scenes)
-        self.ui.pages[4].goback_action.triggered.connect(self.search_results_back)
-        self.ui.pages[4].gofwd_action.triggered.connect(self.search_results_fwd)
+        self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
+        self.ui.pages[4].description.returnPressed.connect(self.search_slots.search_scenes)
+        self.ui.pages[4].search_results_view.clicked.connect(self.search_slots.show_found_scenes)
+        self.ui.pages[4].goback_action.triggered.connect(self.search_slots.search_results_back)
+        self.ui.pages[4].gofwd_action.triggered.connect(self.search_slots.search_results_fwd)
 
         # Stubs
         self.video_files_in_directory = None
@@ -205,48 +209,6 @@ class MainWindow(QMainWindow):
         worker = SceneIndexBuilder()
         self.cpu_threadpool.start(worker)
 
-    def search_scenes(self):
-        self.show_search_results(0, [])
-        self.update_layout(self.ui.pages[4].scenes_list_model, set_filter="0")
-        self.ui.pages[4].search_results_model.offset = 0
-        prompt = self.ui.pages[4].description.text()
-        prompt = prompt.strip()
-        if len(prompt):
-            worker = ExtSearcher(prompt=prompt)
-            worker.signals.result.connect(self.show_search_results)
-            self.gpu_threadpool.start(worker)
-
-    def show_search_results(self, page:int, scene_id_list:list):
-        self.found_scene_id_list = scene_id_list
-        is_include_horizontal = self.ui.pages[4].include_horizontal.isChecked()
-        is_include_vertical = self.ui.pages[4].include_vertical.isChecked()
-        created_at_from = self.ui.pages[4].created_at_from.date()
-        created_at_to = self.ui.pages[4].created_at_to.date()
-        imported_at_from = self.ui.pages[4].imported_at_from.date()
-        imported_at_to = self.ui.pages[4].imported_at_to.date()
-        self.ui.pages[4].search_results_model.set_results(scene_id_list,
-                                                          is_include_horizontal, is_include_vertical,
-                                                          created_at_from, created_at_to,
-                                                          imported_at_from, imported_at_to)
-        self.ui.pages[4].search_results_view.clearSelection()
-        self.update_layout(self.ui.pages[4].scenes_list_model, set_filter="0")
-        self.ui.pages[4].search_results_model.layoutChanged.emit()
-        self.ui.pages[4].pager.setText(str(page + 1))
-        if page == 0:
-            self.ui.pages[4].gofwd_action.setDisabled(False)
-
-    def search_results_back(self):
-        page, back_disable, fwd_disable = self.ui.pages[4].search_results_model.goback()
-        self.ui.pages[4].goback_action.setDisabled(back_disable)
-        self.ui.pages[4].gofwd_action.setDisabled(fwd_disable)
-        self.show_search_results(page, self.found_scene_id_list)
-
-    def search_results_fwd(self):
-        page, back_disable, fwd_disable = self.ui.pages[4].search_results_model.gofwd()
-        self.ui.pages[4].goback_action.setDisabled(back_disable)
-        self.ui.pages[4].gofwd_action.setDisabled(fwd_disable)
-        self.show_search_results(page, self.found_scene_id_list)
-
     def metadata_thread_complete(self, id:int, metadata:dict):
         fname, _ = FilesModel.select_file_path(id)
         worker = VideoImportWorker(id=id,
@@ -282,17 +244,16 @@ class MainWindow(QMainWindow):
         model.db_model.select()
         model.layoutChanged.emit()
 
+    def clear_scenes_view(self, page):
+        self.update_layout(self.ui.pages[page].scenes_list_model, set_filter="0")
+        self.ui.pages[page].info_action.setDisabled(True)  # Info tool button
+
     def show_scenes(self, signal):
         video_file_id_idx = signal.siblingAtColumn(0)
         video_file_id = signal.model().db_model.data(video_file_id_idx)
         page = signal.model().page
         self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
-
-    def show_found_scenes(self, signal):
-        video_file_id_idx = signal.siblingAtColumn(1)
-        video_file_id = signal.model().db_model.data(video_file_id_idx)
-        page = signal.model().page
-        self.update_layout(self.ui.pages[page].scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
+        self.ui.pages[page].info_action.setEnabled(True)
 
     def import_video_files(self, signal):
         FilesModel.import_files(self.video_files_in_directory)
@@ -303,7 +264,7 @@ class MainWindow(QMainWindow):
             dir_path = self.ui.pages[1].files_list_model.get_file_path(signal)
             self.video_files_in_directory = self.ui.pages[1].files_list_model.get_video_files(dir_path)
             self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}'")
-            self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
+            self.clear_scenes_view(1)
             # Import tool button
             self.ui.pages[1].import_action.setEnabled(len(self.video_files_in_directory) > 0)
         else:
@@ -313,7 +274,7 @@ class MainWindow(QMainWindow):
                 dir_path, file_name = os.path.split(selected_path)
                 self.video_files_in_directory = [selected_path]
                 self.update_layout(self.ui.pages[1].files_list_model, set_filter=f"import_dir='{dir_path}' AND import_name='{file_name}'")
-                self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
+                self.clear_scenes_view(1)
                 self.ui.pages[1].import_action.setEnabled(True)
 
     def show_files_for_date(self, signal):
@@ -328,13 +289,13 @@ class MainWindow(QMainWindow):
             year = int(date[1])
             month = int(date[2])
             self.update_layout(self.ui.pages[0].files_list_model, set_filter=f"strftime('%Y', {field})='{year}' AND strftime('%m', {field})='{month:02d}'")
-            self.update_layout(self.ui.pages[0].scenes_list_model, set_filter="0")
+            self.clear_scenes_view(0)
 
     def collapse_files(self, signal):
         # Import tool button
         self.ui.pages[1].import_action.setEnabled(False)
         self.update_layout(self.ui.pages[1].files_list_model, set_filter='0')
-        self.update_layout(self.ui.pages[1].scenes_list_model, set_filter="0")
+        self.clear_scenes_view(1)
 
     def change_page(self) -> None:
         action_name = self.sender().text()  # type: ignore

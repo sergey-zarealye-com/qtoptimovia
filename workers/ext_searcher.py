@@ -40,17 +40,18 @@ class ExtSearcher(QRunnable):
 
     @pyqtSlot()
     def run(self):
-        scene_index_list = []
+        scene_index_list, distances = [], []
         try:
             emb = self.text_embed(self.prompt)
-            scene_index_list = self.get_knn(emb)
+            scene_index_list, distances = self.get_knn(emb)
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
-            self.signals.result.emit(0, scene_index_list)
+            self.signals.result.emit(0, None)
         else:
-            self.signals.result.emit(0, scene_index_list)
+            self.signals.result.emit(0, dict(scene_index_list=scene_index_list,
+                                             distances=distances))
 
     def text_embed(self, prompt):
         text = clip.tokenize([prompt]).to(self.device)
@@ -72,4 +73,4 @@ class ExtSearcher(QRunnable):
                 traceback.format_exc(),
             )
         ids, distances = index.knnQuery(vector, k=k)
-        return ids
+        return ids, distances
