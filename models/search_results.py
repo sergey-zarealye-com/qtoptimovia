@@ -80,25 +80,25 @@ class SearchResult(SceneModel):
         QPixmapCache.insert(obj['cache_key'], pix)
         self.layoutChanged.emit()
 
-    def set_results(self, scene_id_list, is_include_horizontal, is_include_vertical,
-                    created_at_from, created_at_to, imported_at_from, imported_at_to):
+    def set_results(self, scene_id_list, is_include_horizontal=None, is_include_vertical=None,
+                    created_at_from=None, created_at_to=None, imported_at_from=None, imported_at_to=None):
         indexes = ','.join([str(i) for i in scene_id_list])
         q = self.q_tpl % (indexes, indexes)
         count = self.count_tpl % ','.join([str(i) for i in scene_id_list])
-        if is_include_horizontal != is_include_vertical:
+        if is_include_horizontal is not None and is_include_horizontal != is_include_vertical:
             if is_include_horizontal:
                 q += " AND video_files.width > video_files.height "
                 count += " AND video_files.width > video_files.height "
             if is_include_vertical:
                 q += " AND video_files.width < video_files.height "
                 count += " AND video_files.width < video_files.height "
-        if created_at_from < created_at_to:
+        if created_at_from is not None and created_at_from < created_at_to:
             created_at_to = created_at_to.addDays(1)
             q += f" AND video_files.created_at >= DATE('{created_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.created_at <= DATE('{created_at_to.toString('yyyy-MM-dd')}') "
             count += f" AND video_files.created_at >= DATE('{created_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.created_at <= DATE('{created_at_to.toString('yyyy-MM-dd')}') "
-        if imported_at_from < imported_at_to:
+        if imported_at_from is not None and imported_at_from < imported_at_to:
             imported_at_to = imported_at_to.addDays(1)
             q += f" AND video_files.imported_at >= DATE('{imported_at_from.toString('yyyy-MM-dd')}')" \
                  f" AND video_files.imported_at <= DATE('{imported_at_to.toString('yyyy-MM-dd')}') "

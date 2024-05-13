@@ -1,6 +1,8 @@
 import os
 
+from models.scenes import SceneModel
 from slots.base import SlotsBase
+from workers.sim_search import SimSearcher
 
 
 class AlbumsSlots(SlotsBase):
@@ -23,3 +25,4 @@ class AlbumsSlots(SlotsBase):
             self.update_layout(self.ui.files_list_model, set_filter=f"strftime('%Y', {field})='{year}' AND strftime('%m', {field})='{month:02d}'")
             self.ui.files_list_view.clearSelection()
             self.clear_scenes_view()
+

@@ -169,12 +169,12 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].tree.clicked.connect(self.files_slots.show_files_in_dir)
         self.ui.pages[1].tree.collapsed.connect(self.files_slots.collapse_files)
         self.ui.pages[1].files_list_view.clicked.connect(self.files_slots.show_scenes)
-        self.ui.pages[1].find_similar_action.triggered.connect(lambda o: print('trig', type(o)))
+        self.ui.pages[1].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
 
         # Albums tree signals:
         self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
         self.ui.pages[0].files_list_view.clicked.connect(self.albums_slots.show_scenes)
-        self.ui.pages[0].find_similar_action.triggered.connect(lambda o: print('trig', type(o)))
+        self.ui.pages[0].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
@@ -182,8 +182,8 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].search_results_view.clicked.connect(self.search_slots.show_scenes)
         self.ui.pages[4].goback_action.triggered.connect(self.search_slots.search_results_back)
         self.ui.pages[4].gofwd_action.triggered.connect(self.search_slots.search_results_fwd)
-        self.ui.pages[4].find_similar_action.triggered.connect(lambda o: print('trig', type(o)))
-        self.ui.pages[4].find_similar_from_sr_action.triggered.connect(lambda o: print('trig', type(o)))
+        self.ui.pages[4].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
+        self.ui.pages[4].find_similar_from_sr_action.triggered.connect(self.search_slots.find_similar_scenes)
 
         # Stubs
         self.video_files_in_directory = None

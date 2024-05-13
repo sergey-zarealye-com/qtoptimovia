@@ -9,9 +9,10 @@ from models.files import FilesModel
 from models.scenes import SceneModel
 from ui.common import setup_scenes_view, setup_files_list_view, c_setup_video_files_toolbar, c_setup_scenes_toolbar, \
     get_fixed_spacer, get_horizontal_spacer
+from ui.ui_base import UiBase
 
 
-class FilesUI:
+class FilesUI(UiBase):
     def __init__(self):
         self.tree = QTreeView()
         self.files_list_view = QTableView()
@@ -30,15 +31,8 @@ class FilesUI:
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play video")
         self.info_action = QAction(QIcon("icons/information.png"), "Info")
 
-        self.scenes_list_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.scenes_list_view.customContextMenuRequested.connect(self.show_context_menu)
-        self.scene_context_menu = QMenu()
-        self.find_similar_action = QAction('Find similar')
-        self.scene_context_menu.addAction(self.find_similar_action)
-
-    def show_context_menu(self, pos):
-        index = self.scenes_list_view.indexAt(pos)
-        self.scene_context_menu.popup(self.scenes_list_view.viewport().mapToGlobal(pos))
+        self.setup_context_menu(self.scenes_list_view)
+        self.context_index = None
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         widget_container = QWidget()

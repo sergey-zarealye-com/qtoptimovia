@@ -1,5 +1,7 @@
+from models.scenes import SceneModel
 from slots.base import SlotsBase
 from workers.ext_searcher import ExtSearcher
+from workers.sim_search import SimSearcher
 
 
 class ExtSearchSlots(SlotsBase):
@@ -65,3 +67,39 @@ class ExtSearchSlots(SlotsBase):
         video_file_id = signal.model().db_model.data(video_file_id_idx)
         self.update_layout(self.ui.scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
         self.ui.info_action.setEnabled(True)
+
+    def find_similar_scenes(self, flag):
+        print('find_similar_scenes')
+        uipage = self.window.ui.col3_stack_widget.currentIndex()
+        signal = self.window.ui.pages[uipage].context_index
+        scene_id_idx = signal.siblingAtColumn(0)
+        scene_id = signal.model().db_model.data(scene_id_idx)
+        col = signal.column()
+        fv = SceneModel.select_embedding(scene_id)
+        worker = SimSearcher(fv=fv)
+        worker.signals.result.connect(self.show_sim_search_results)
+        self.window.cpu_threadpool.start(worker)
+
+    def show_sim_search_results(self, page:int, search_results:dict):
+        self.window.ui.col1_stack_widget.setCurrentIndex(4)
+        self.window.ui.col2_stack_widget.setCurrentIndex(4)
+        self.window.ui.col3_stack_widget.setCurrentIndex(4)
+        self.search_results = search_results
+        if search_results is None:
+            found_scene_id_list = []
+            distances = []
+        else:
+            found_scene_id_list = search_results['scene_index_list']
+            distances = search_results['distances']
+        self.ui.search_results_model.offset = 0
+        self.ui.search_results_model.set_results(found_scene_id_list)
+        self.ui.search_results_view.clearSelection()
+        self.clear_scenes_view()
+        self.ui.search_results_model.layoutChanged.emit()
+        self.ui.pager.setText(str(page + 1))
+
+        self.ui.plot_graph.clear()
+        self.ui.plot_graph.plot(range(len(distances)), distances)
+        if page == 0:
+            self.ui.gofwd_action.setDisabled(False)
+            self.ui.goback_action.setDisabled(True)
