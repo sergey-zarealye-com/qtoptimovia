@@ -74,7 +74,7 @@ class SceneIndexBuilder(QRunnable):
                 id_list.append(id)
                 batch.append(np.frombuffer(buff, dtype=np.float32))
             if len(id_list):
-                yield id_list, np.array(batch)
+                yield id_list, np.array(batch) #TODO this array construction is not working in linux ?!?!?!?!
                 offset += lim
             else:
                 break
