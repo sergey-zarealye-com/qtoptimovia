@@ -7,6 +7,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import QMessageBox
 
+from models.scenes import SceneModel
 from workers.worker_signals import WorkerSignals
 
 
@@ -72,7 +73,7 @@ class SceneIndexBuilder(QRunnable):
                 id = select_query.value(0)
                 buff = select_query.value(1)
                 id_list.append(id)
-                batch.append(np.frombuffer(buff, dtype=np.float32))
+                batch.append(SceneModel.frombuffer(buff))
             if len(id_list):
                 yield id_list, np.array(batch) #TODO this array construction is not working in linux ?!?!?!?!
                 offset += lim

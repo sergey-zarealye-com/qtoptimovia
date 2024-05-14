@@ -88,6 +88,7 @@ class ExtSearchUI(UiBase):
             layout.addWidget(groupBox)
 
             self.plot_graph.showGrid(x=True, y=True)
+            self.plot_graph.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
             layout.addWidget(self.plot_graph)
 
 
