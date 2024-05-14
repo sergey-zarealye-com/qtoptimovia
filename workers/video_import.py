@@ -10,7 +10,7 @@ from PIL import Image
 import numpy as np
 
 import cv2
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QByteArray, QRunnable
 from PyQt5.QtSql import QSqlDatabase
 
 from models.files import FilesModel
@@ -61,7 +61,6 @@ class VideoImportWorker(QRunnable):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
-    @pyqtSlot()
     def run(self):
         try:
             self.scenes = self.split_by_scenes(*self.args, **self.kwargs)

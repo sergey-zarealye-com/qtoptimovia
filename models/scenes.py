@@ -190,6 +190,10 @@ class SceneModel(QAbstractTableModel):
         select_query.exec()
         if select_query.first():
             buff = select_query.value(0)
-            return np.frombuffer(buff, dtype=np.float32)
+            return SceneModel.frombuffer(buff)
+        
+    @staticmethod
+    def frombuffer(buff):
+        return np.frombuffer(buff, dtype=np.float16)
 
 
