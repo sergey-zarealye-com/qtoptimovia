@@ -100,8 +100,6 @@ class VideoImportWorker(QRunnable):
         responces = []
         now_triggered = False
         with torch.no_grad():
-            # with open(os.path.join('data',
-            #                        os.path.basename(self.fname) + '.txt'), 'w') as out:
             for pos_list, buff in self.frame_iterator():
                 for idx in range(len(buff)):
                     current_pos = pos_list[idx]['pos_sec']
@@ -133,6 +131,7 @@ class VideoImportWorker(QRunnable):
                                 and current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000 - scene_start >= self.MIN_SCENE_SEC:
                             scene_end = current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000
                             emb = mean_image_features.cpu().numpy() / scene_frames_count
+                            emb = emb.astype(np.float16)
                             self.signals.partial_result.emit(self.id,
                                                              dict(
                                                                  scene_start=scene_start,
@@ -144,9 +143,6 @@ class VideoImportWorker(QRunnable):
                             scene_frames_count = 0
                             mean_image_features *= 0
                         now_triggered = abs(resp) >= self.THRESHOLD
-
-                        # out.write("%f %f %f %f %d\n" % (pos_list[idx]['pos_sec'], delta, abs(resp), self.THRESHOLD, int(now_triggered)))
-
                     prev_image_features = image_features.detach().clone()
 
                 pos_sec = pos_list[-1]['pos_sec']
@@ -154,12 +150,13 @@ class VideoImportWorker(QRunnable):
                 self.signals.progress.emit(self.id, progress)
             if scene_frames_count > 0:
                 emb = mean_image_features.cpu().numpy() / scene_frames_count
+                emb = emb.astype(np.float16)
                 self.signals.partial_result.emit(self.id,
                                                  dict(
                                                      scene_start=scene_start,
                                                      scene_end=self.duration,
                                                      scene_embedding=QByteArray(emb.tobytes())
-                                                 )
+                                                     )
                                                  )
         return scenes
 

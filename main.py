@@ -20,18 +20,11 @@ from ui.common import get_vertical_spacer
 from ui.ext_search_ui import ExtSearchUI
 from ui.files_ui import FilesUI
 from ui.montage_ui import MontageUI
-from ui.status_bar import setup_statusbar
+# from ui.status_bar import setup_statusbar
 from ui.windows.preferences import PreferencesWindow
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
 from workers.video_import import VideoImportWorker
-
-IS_USE_QDARKTHEME = True
-if IS_USE_QDARKTHEME:
-    import qdarktheme
-else:
-    import qtmodern.styles
-    import qtmodern.windows
 
 
 class MainWindowUI:
@@ -62,7 +55,7 @@ class MainWindowUI:
         self.col3_stack_widget = QStackedWidget()
 
         sidebar = QToolBar("Sidebar")
-        self.statusbar = QStatusBar()
+        # self.statusbar = QStatusBar()
         menubar = QMenuBar()
         self.tool_btn_settings = QToolButton()
         self.cpu_threads_pb = QProgressBar()
@@ -108,26 +101,19 @@ class MainWindowUI:
         content_widget.setLayout(content_layout)
         self.central_window.setCentralWidget(content_widget)
 
-        self.statusbar.addWidget(setup_statusbar(self))
+        # self.statusbar.addWidget(setup_statusbar(self))
 
         # TODO resume paused files import from the position of scene
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_statusbar)
-        self.timer.start(500)
+        # self.timer = QTimer()
+        # self.timer.timeout.connect(self.update_statusbar)
+        # self.timer.start(500)
 
         main_win.setCentralWidget(self.central_window)
         main_win.addToolBar(Qt.ToolBarArea.LeftToolBarArea, sidebar)
         main_win.setMenuBar(menubar)
-        main_win.setStatusBar(self.statusbar)
+        # main_win.setStatusBar(self.statusbar)
 
-    def update_statusbar(self):
-        cnt_cpu = self.main_win.cpu_threadpool.activeThreadCount()
-        self.cpu_threads_pb.setValue(cnt_cpu)
-        cnt_gpu = self.main_win.gpu_threadpool.activeThreadCount()
-        self.gpu_threads_pb.setValue(cnt_gpu)
-        if self.pages[0].scenes_list_model.timeit_cnt > 0:
-            mtime = self.pages[0].scenes_list_model.time_sum / self.pages[0].scenes_list_model.timeit_cnt
-            self.timeit_label.setText(f"Timeit: {mtime / 1e6:.2f}")
+
 
 
 class MainWindow(QMainWindow):
@@ -271,11 +257,8 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    if IS_USE_QDARKTHEME:
-        if sys.platform == 'darwin':
-            app.setStyle("Fusion")
-        # else:
-        #     qdarktheme.setup_theme('dark')
+    if sys.platform == 'darwin':
+        app.setStyle("Fusion")
 
     if not con.open():
         QMessageBox.critical(
@@ -286,13 +269,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     w = MainWindow()
-
-    if IS_USE_QDARKTHEME:
-        w.setDocumentMode(True)
-        w.show()
-    else:
-        qtmodern.styles.light(app)
-        mw = qtmodern.windows.ModernWindow(w)
-        mw.show()
+    w.setDocumentMode(True)
+    w.show()
 
     app.exec()
