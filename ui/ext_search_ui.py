@@ -81,7 +81,7 @@ class ExtSearchUI(UiBase):
             form_layout.addRow(win.tr("Horizontal:"), self.include_horizontal)
             form_layout.addRow(win.tr("Vertical:"), self.include_vertical)
 
-            groupBox = QGroupBox()
+            groupBox = QWidget()
             groupBox.setLayout(form_layout)
             groupBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 

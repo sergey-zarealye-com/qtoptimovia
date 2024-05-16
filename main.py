@@ -1,34 +1,32 @@
-import sys, os
+import sys
 
+from PyQt5.QtCore import Qt, QSize, QThreadPool, QTimer
+from PyQt5.QtGui import QIcon, QPixmapCache
+from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
-    QLabel, QToolBar, QStatusBar, QDesktopWidget,
-    QWidget, QHBoxLayout, QVBoxLayout, QMenuBar, QToolButton,
-    QSizePolicy, QLineEdit, QSplitter, QStackedWidget, QMessageBox, QProgressBar, QMenu)
-from PyQt5.QtGui import QIcon, QPixmapCache
-from PyQt5.QtCore import Qt, QSize, QModelIndex, QThreadPool, QTimer
-from PyQt5.QtSql import QSqlDatabase
+    QToolBar, QStatusBar, QDesktopWidget,
+    QWidget, QVBoxLayout, QMenuBar, QToolButton,
+    QSplitter, QStackedWidget, QMessageBox, QProgressBar)
 
-from models.albums import AlbumsModel
-from models.scenes import SceneModel
+from models.files import FilesModel
 from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
 from slots.files import FilesSlots
 from slots.files_import import FilesImportSlots
 from ui.albums_ui import AlbumsUI
-from ui.common import get_fixed_spacer, get_vertical_spacer, get_horizontal_spacer
-from ui.files_ui import FilesUI
 from ui.archive_ui import ArchiveUI
-from ui.montage_ui import MontageUI
+from ui.common import get_vertical_spacer
 from ui.ext_search_ui import ExtSearchUI
-from models.files import FilesModel
+from ui.files_ui import FilesUI
+from ui.montage_ui import MontageUI
 from ui.status_bar import setup_statusbar
-from workers.ext_searcher import ExtSearcher
+from ui.windows.preferences import PreferencesWindow
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
 from workers.video_import import VideoImportWorker
 
-IS_USE_QDARKTHEME = False
+IS_USE_QDARKTHEME = True
 if IS_USE_QDARKTHEME:
     import qdarktheme
 else:
@@ -157,7 +155,8 @@ class MainWindow(QMainWindow):
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
 
-        self.ui.tool_btn_settings.clicked.connect(self.rebuild_scenes_index)
+        # self.ui.tool_btn_settings.clicked.connect(self.rebuild_scenes_index)
+        self.ui.tool_btn_settings.clicked.connect(self.show_preferences_win)
 
         # Import tool button
         self.ui.pages[1].import_action.triggered.connect(self.import_slots.import_video_files)
@@ -196,6 +195,9 @@ class MainWindow(QMainWindow):
 
         self.ui.pages[4].search_results_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[4].scenes_list_model.cpu_threadpool = self.cpu_threadpool
+
+        # Preferences window
+        self.preferences_win = None
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
@@ -250,6 +252,12 @@ class MainWindow(QMainWindow):
         self.ui.col2_stack_widget.setCurrentIndex(index)
         self.ui.col3_stack_widget.setCurrentIndex(index)
 
+    def show_preferences_win(self, checked):
+
+        if self.preferences_win is None:
+            self.preferences_win = PreferencesWindow(self)
+        self.preferences_win.open()
+
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
 
@@ -266,8 +274,8 @@ if __name__ == "__main__":
     if IS_USE_QDARKTHEME:
         if sys.platform == 'darwin':
             app.setStyle("Fusion")
-        else:
-            qdarktheme.setup_theme('dark')
+        # else:
+        #     qdarktheme.setup_theme('dark')
 
     if not con.open():
         QMessageBox.critical(
@@ -283,7 +291,7 @@ if __name__ == "__main__":
         w.setDocumentMode(True)
         w.show()
     else:
-        qtmodern.styles.dark(app)
+        qtmodern.styles.light(app)
         mw = qtmodern.windows.ModernWindow(w)
         mw.show()
 
