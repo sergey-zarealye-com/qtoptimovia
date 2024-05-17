@@ -12,15 +12,19 @@ class AlbumsModel(QStandardItemModel):
 
     def __init__(self):
         super().__init__()
+        self.table_name = 'albums'
+        self.fields = self.setup_db()
         albums_tree = {
             "By events": {},
             "By filming date": {},
             "By import date": {}
         }
+        albums_tree['By events'] = self.select_albums()
         albums_tree['By filming date'] = self.select_dates('created_at')
         albums_tree['By import date'] = self.select_dates('imported_at')
         self.setColumnCount(2)
         self.fill_model_from_dict(self.invisibleRootItem(), albums_tree)
+        
 
     def fill_model_from_dict(self, parent, d):
         if isinstance(d, dict):
@@ -46,3 +50,65 @@ class AlbumsModel(QStandardItemModel):
             month_name = calendar.month_name[int(month)]
             out[year][month_name] = "%s %s %s" %(field, year, int(month))
         return out
+    
+    def select_albums(self):
+        select_query = QSqlQuery()
+        select_query.exec("SELECT id, name, position FROM albums WHERE is_visible>0 ORDER BY position")
+        out = defaultdict(dict)
+        while select_query.next():
+            album_id = select_query.value(0)
+            name  = select_query.value(1)
+            position = select_query.value(2)
+            out[name] = "album id %d" % album_id
+        return out
+    
+    @staticmethod
+    def select_files_for_album(album_id):
+        select_query = QSqlQuery()
+        select_query.exec(f"SELECT video_files_id FROM albums_video_files WHERE albums_id={album_id}")
+        out = []
+        while select_query.next():
+            out.append(str(select_query.value(0)))
+        return out
+
+    def setup_db(self):
+        # select video_files_id, albums_id, albums.name as album_name, video_files.name as file_name 
+        # from albums_video_files
+        # join video_files on video_files.id=albums_video_files.video_files_id
+        # left join albums on albums.id=albums_video_files.albums_id
+        create_table_query = QSqlQuery()
+        create_table_query.exec(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.table_name} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                name VARCHAR NOT NULL,
+                created_at DATETIME NOT NULL,
+                position INT NOT NULL,
+                is_visible SMALLINT DEFAULT 1
+             )
+            """
+        )
+        create_table_query1 = QSqlQuery()
+        create_table_query1.exec(
+            f"""
+            CREATE TABLE IF NOT EXISTS albums_video_files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                video_files_id INT NOT NULL,
+                albums_id INT NOT NULL
+             )
+            """
+        )
+        create_idx_query1 = QSqlQuery()
+        create_idx_query1.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_{self.table_name}_video_files ON {self.table_name}(video_files)
+            """
+        )
+        return [
+            'id',
+            'name',
+            'created_at',
+            'position',
+            'is_visible'
+        ]
+        
