@@ -19,7 +19,7 @@ class AlbumsModel(QStandardItemModel):
             "By filming date": {},
             "By import date": {}
         }
-        albums_tree['By events'] = self.select_albums()
+        albums_tree['By events'] = self.select_albums_2dict()
         albums_tree['By filming date'] = self.select_dates('created_at')
         albums_tree['By import date'] = self.select_dates('imported_at')
         self.setColumnCount(2)
@@ -51,16 +51,34 @@ class AlbumsModel(QStandardItemModel):
             out[year][month_name] = "%s %s %s" %(field, year, int(month))
         return out
     
-    def select_albums(self):
+    @staticmethod
+    def select_albums():
         select_query = QSqlQuery()
         select_query.exec("SELECT id, name, position FROM albums WHERE is_visible>0 ORDER BY position")
-        out = defaultdict(dict)
+        out = []
         while select_query.next():
             album_id = select_query.value(0)
-            name  = select_query.value(1)
-            position = select_query.value(2)
+            name = select_query.value(1)
+            out.append((album_id, name))
+        return out
+
+    def select_albums_2dict(self):
+        albums = AlbumsModel.select_albums()
+        out = defaultdict(dict)
+        for album_id, name in albums:
             out[name] = "album id %d" % album_id
         return out
+
+    @staticmethod
+    def add_file_to_album(album_id, video_file_id):
+        insert_query = QSqlQuery()
+        insert_query.prepare("""
+                    INSERT INTO albums_video_files (video_files_id, albums_id)
+                    VALUES (?, ?)
+                """)
+        insert_query.addBindValue(video_file_id)
+        insert_query.addBindValue(album_id)
+        insert_query.exec()
 
     def add_album(self, name):
         select_query = QSqlQuery()

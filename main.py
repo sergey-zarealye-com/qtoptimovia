@@ -148,6 +148,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].tree.collapsed.connect(self.files_slots.collapse_files)
         self.ui.pages[1].files_list_view.clicked.connect(self.files_slots.show_scenes)
         self.ui.pages[1].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
+        self.ui.pages[1].to_album_action.triggered.connect(self.files_slots.to_album)
 
         # Albums tree signals:
         self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
@@ -155,6 +156,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[0].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
         self.ui.pages[0].add_album_action.triggered.connect(self.albums_slots.add_album)
         self.ui.pages[0].del_album_action.triggered.connect(self.albums_slots.del_album)
+        self.ui.pages[0].to_album_action.triggered.connect(self.albums_slots.to_album)
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
@@ -177,9 +179,10 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].search_results_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[4].scenes_list_model.cpu_threadpool = self.cpu_threadpool
 
-        # Preferences window
+        # Dialog windows
         self.preferences_win = None
         self.add_album_dialog = None
+        self.to_album_dialog = None
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))
