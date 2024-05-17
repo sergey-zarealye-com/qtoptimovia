@@ -80,6 +80,14 @@ class AlbumsModel(QStandardItemModel):
         parent = self.item(0, 0)
         parent.appendRow([QStandardItem(name), QStandardItem('')])
         return parent.index()
+
+    def del_album(self, album_id):
+        del_query1 = QSqlQuery()
+        del_query1.exec(f"DELETE FROM albums_video_files WHERE albums_id={album_id}")
+        del_query2 = QSqlQuery()
+        del_query2.exec(f"DELETE FROM albums WHERE id={album_id}")
+        parent = self.item(0, 0)
+        return parent.index()
     
     @staticmethod
     def select_files_for_album(album_id):

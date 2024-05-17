@@ -1,5 +1,7 @@
 import os
 
+from PyQt5.QtWidgets import QMessageBox
+
 from models.albums import AlbumsModel
 from models.scenes import SceneModel
 from slots.base import SlotsBase
@@ -20,10 +22,10 @@ class AlbumsSlots(SlotsBase):
         rr = self.ui.tree_model.index(r, c+1, p)
         item = self.ui.tree_model.itemFromIndex(rr)
         data = item.text().split()
-        self.ui.add_album_action.setEnabled( r==0 and c==0 and p.row()==-1 and p.column()==-1
-                                             or
-                                             p.row() == 0 and p.column() == 0 and p.parent().row()==-1 and p.parent().column()==-1
-                                             )
+        root_events_selected = r==0 and c==0 and p.row()==-1 and p.column()==-1
+        event_selected = p.row() == 0 and p.column() == 0 and p.parent().row()==-1 and p.parent().column()==-1
+        self.ui.add_album_action.setEnabled( root_events_selected or event_selected)
+        self.ui.del_album_action.setEnabled(event_selected)
         if len(data) == 3:
             if data[0] == 'album' and data[1] == 'id':
                 album_id = int(data[2])
@@ -45,7 +47,28 @@ class AlbumsSlots(SlotsBase):
         if self.window.add_album_dialog.exec():
             album_name = self.window.add_album_dialog.name.text()
             idx = self.window.ui.pages[0].tree_model.add_album(album_name)
-            self.window.ui.pages[0].tree.setExpanded(idx, True)
+            self.ui.tree.setExpanded(idx, True)
 
     def del_album(self, signal):
-        pass
+        sel_indexes = self.ui.tree.selectionModel().selectedIndexes()
+        if len(sel_indexes):
+            album_name = self.ui.tree_model.itemFromIndex(sel_indexes[0]).text()
+            r = sel_indexes[0].row()
+            c = sel_indexes[0].column()
+            p = sel_indexes[0].parent()
+            rr = self.ui.tree_model.index(r, c + 1, p)
+            item = self.ui.tree_model.itemFromIndex(rr)
+            data = item.text().split()
+            if len(data) == 3:
+                if data[0] == 'album' and data[1] == 'id':
+                    album_id = int(data[2])
+                    dlg = QMessageBox(self.window)
+                    dlg.setWindowTitle("Please confirm")
+                    dlg.setText(f"You are about to delete an album {album_name}.\nAre you sure?")
+                    dlg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+                    dlg.setIcon(QMessageBox.Question)
+                    button = dlg.exec()
+                    if button == QMessageBox.Yes:
+                        idx = self.window.ui.pages[0].tree_model.del_album(album_id)
+                        self.ui.tree_model.itemFromIndex(p).removeRow(r)
+                        self.ui.tree.setExpanded(idx, True)
