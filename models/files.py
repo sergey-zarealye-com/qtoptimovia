@@ -16,8 +16,8 @@ class FilesModel(QAbstractTableModel):
         ("created_at", "Created at"),
         ("proc_progress", "Processed"),
     ])
-    THUMB_HEIGHT = 96
-    THUMB_WIDTH = 96
+    THUMB_HEIGHT = 196#96
+    THUMB_WIDTH = 160#96
 
 
     def __init__(self, page:int):

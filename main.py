@@ -5,7 +5,7 @@ from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QAction, QActionGroup,
-    QToolBar, QStatusBar, QDesktopWidget,
+    QToolBar, QDesktopWidget,
     QWidget, QVBoxLayout, QMenuBar, QToolButton,
     QSplitter, QStackedWidget, QMessageBox, QProgressBar)
 
@@ -20,7 +20,6 @@ from ui.common import get_vertical_spacer
 from ui.ext_search_ui import ExtSearchUI
 from ui.files_ui import FilesUI
 from ui.montage_ui import MontageUI
-# from ui.status_bar import setup_statusbar
 from ui.windows.preferences import PreferencesWindow
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
@@ -55,7 +54,6 @@ class MainWindowUI:
         self.col3_stack_widget = QStackedWidget()
 
         sidebar = QToolBar("Sidebar")
-        # self.statusbar = QStatusBar()
         menubar = QMenuBar()
         self.tool_btn_settings = QToolButton()
         self.cpu_threads_pb = QProgressBar()
@@ -101,8 +99,6 @@ class MainWindowUI:
         content_widget.setLayout(content_layout)
         self.central_window.setCentralWidget(content_widget)
 
-        # self.statusbar.addWidget(setup_statusbar(self))
-
         # TODO resume paused files import from the position of scene
         # self.timer = QTimer()
         # self.timer.timeout.connect(self.update_statusbar)
@@ -110,10 +106,7 @@ class MainWindowUI:
 
         main_win.setCentralWidget(self.central_window)
         main_win.addToolBar(Qt.ToolBarArea.LeftToolBarArea, sidebar)
-        main_win.setMenuBar(menubar)
-        # main_win.setStatusBar(self.statusbar)
-
-
+        # main_win.setMenuBar(menubar)
 
 
 class MainWindow(QMainWindow):

@@ -1,16 +1,16 @@
 from datetime import timedelta
 
 import numpy as np
-from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, QByteArray
-from PyQt5.QtGui import QPixmap, QImage, QPixmapCache
+from PyQt5.QtCore import Qt, QVariant
+from PyQt5.QtGui import QPixmap, QPixmapCache
 from PyQt5.QtSql import QSqlQuery, QSqlTableModel
-from PyQt5.QtWidgets import QMessageBox
 
+from models.base import PixBaseModel
 from models.files import FilesModel
 from workers.thumbnails_worker import ThumbnailsWorker
 
 
-class SceneModel(QAbstractTableModel):
+class SceneModel(PixBaseModel):
     COLUMNS = dict([
         ("thumbnail1", ""),
         ("thumbnail2", ""),
@@ -74,18 +74,6 @@ class SceneModel(QAbstractTableModel):
                 self.cpu_threadpool.start(worker)
             return pix
 
-    def rowCount(self, index):
-        if index.isValid():
-            0
-        else:
-            return self.db_model.rowCount()
-
-    def columnCount(self, index):
-        if index.isValid():
-            0
-        else:
-            return self.db_model.columnCount()
-
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if self.fields[section] in SceneModel.COLUMNS:
@@ -94,26 +82,6 @@ class SceneModel(QAbstractTableModel):
 
     def get_video_file_id_column(self):
         return self.fields.index('video_file_id')
-
-    def print_error(self, e):
-        exctype, value, traceback_ = e
-        QMessageBox.critical(
-            None,
-            "Optimovia - Error!",
-            "Database Error: %s\n%s" % (value, traceback_),
-        )
-
-    def frame_extracted(self, id, obj):
-        frm = obj['frame']
-        h, w = frm.shape[:2]
-        im = QImage(QByteArray(frm.tobytes()), w, h, QImage.Format_RGB888)
-        if h > w:
-            im = im.scaledToHeight(self.THUMB_HEIGHT)
-        else:
-            im = im.scaledToWidth(self.THUMB_WIDTH)
-        pix = QPixmap.fromImage(im)
-        QPixmapCache.insert(obj['cache_key'], pix)
-        self.layoutChanged.emit()
 
     def timeit(self, id, t):
         self.time_sum += t

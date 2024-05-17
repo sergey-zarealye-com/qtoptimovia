@@ -140,5 +140,4 @@ class ExtSearchUI(UiBase):
     def setup_scenes_toolbar(self):
         c_setup_scenes_toolbar(self.scenes_toolbar, self.info_action, self.play_action)
 
-# TODO search results overwrite QPixmapCashe with larger thumbnail size
 # TODO wrong year in search form

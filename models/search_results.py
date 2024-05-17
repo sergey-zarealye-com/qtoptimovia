@@ -71,15 +71,6 @@ class SearchResult(SceneModel):
                 return SearchResult.COLUMNS[self.fields[section]]
         return super(SceneModel, self).headerData(section, orientation, role)
 
-    def frame_extracted(self, id, obj):
-        frm = obj['frame']
-        h, w = frm.shape[:2]
-        im = QImage(QByteArray(frm.tobytes()), w, h, QImage.Format_RGB888)
-        im = im.scaledToWidth(self.THUMB_WIDTH)
-        pix = QPixmap.fromImage(im)
-        QPixmapCache.insert(obj['cache_key'], pix)
-        self.layoutChanged.emit()
-
     def set_results(self, scene_id_list, is_include_horizontal=None, is_include_vertical=None,
                     created_at_from=None, created_at_to=None, imported_at_from=None, imported_at_to=None):
         indexes = ','.join([str(i) for i in scene_id_list])
