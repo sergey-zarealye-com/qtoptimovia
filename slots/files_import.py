@@ -21,7 +21,6 @@ class FilesImportSlots(SlotsBase):
         self.update_layout(self.ui.files_list_model)
 
     def import_thread_complete(self, id: int):
-        print('finished import id:', id)
         self.window.ui.pages[0].tree_model = AlbumsModel()
         self.window.ui.pages[0].tree.setModel(self.window.ui.pages[0].tree_model)
 

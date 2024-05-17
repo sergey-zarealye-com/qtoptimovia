@@ -153,6 +153,8 @@ class MainWindow(QMainWindow):
         self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
         self.ui.pages[0].files_list_view.clicked.connect(self.albums_slots.show_scenes)
         self.ui.pages[0].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
+        self.ui.pages[0].add_album_action.triggered.connect(self.albums_slots.add_album)
+        self.ui.pages[0].del_album_action.triggered.connect(self.albums_slots.del_album)
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
@@ -177,6 +179,7 @@ class MainWindow(QMainWindow):
 
         # Preferences window
         self.preferences_win = None
+        self.add_album_dialog = None
 
     def progress_fn(self, id:int, progress:float):
         FilesModel.update_fields(id, dict(proc_progress=progress))

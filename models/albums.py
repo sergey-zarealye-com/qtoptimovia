@@ -61,6 +61,25 @@ class AlbumsModel(QStandardItemModel):
             position = select_query.value(2)
             out[name] = "album id %d" % album_id
         return out
+
+    def add_album(self, name):
+        select_query = QSqlQuery()
+        select_query.exec("SELECT position FROM albums WHERE is_visible>0 ORDER BY position DESC LIMIT 1")
+        if select_query.first():
+            new_pos = select_query.value(0) + 1
+        else:
+            new_pos = 0
+        insert_query = QSqlQuery()
+        insert_query.prepare("""
+            INSERT INTO albums (name, created_at, position, is_visible)
+            VALUES (?, DATETIME('now', 'localtime'), ?, 1)
+        """)
+        insert_query.addBindValue(name)
+        insert_query.addBindValue(new_pos)
+        insert_query.exec()
+        parent = self.item(0, 0)
+        parent.appendRow([QStandardItem(name), QStandardItem('')])
+        return parent.index()
     
     @staticmethod
     def select_files_for_album(album_id):

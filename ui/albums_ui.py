@@ -51,6 +51,8 @@ class AlbumsUI(UiBase):
             self.tree.setSelectionBehavior(QAbstractItemView.SelectRows)
             self.tree.setSelectionMode(QAbstractItemView.SingleSelection)
             self.tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
+            self.tree.setExpanded(self.tree_model.item(0,0).index(), True)
         elif col == 1:
             self.setup_video_files_toolbar()
             layout.setMenuBar(self.video_files_toolbar)
