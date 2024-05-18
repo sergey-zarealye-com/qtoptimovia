@@ -49,7 +49,6 @@ class AlbumsSlots(SlotsBase):
             idx = self.window.ui.pages[0].tree_model.add_album(album_name)
             self.ui.tree.setExpanded(idx, True)
 
-#TODO fresh created album can not be deleted. Only after program restart.
     def del_album(self, signal):
         sel_indexes = self.ui.tree.selectionModel().selectedIndexes()
         if len(sel_indexes):

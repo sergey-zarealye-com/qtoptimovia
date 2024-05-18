@@ -7,13 +7,15 @@ class SlotsBase():
     def clear_scenes_view(self):
         self.update_layout(self.ui.scenes_list_model, set_filter="0")
         self.ui.info_action.setDisabled(True)  # Info tool button
-        self.ui.to_album_action.setDisabled(True)
+        if hasattr(self.ui, 'to_album_action'):
+            self.ui.to_album_action.setDisabled(True)
 
     def show_scenes(self, signal):
         video_file_id = self.get_video_file_id(signal)
         self.update_layout(self.ui.scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
         self.ui.info_action.setEnabled(True)
-        self.ui.to_album_action.setEnabled(True)
+        if hasattr(self.ui, 'to_album_action'):
+            self.ui.to_album_action.setEnabled(True)
 
     def update_layout(self, model, set_filter=None):
         if set_filter != None:
@@ -29,10 +31,8 @@ class SlotsBase():
         sel_indexes = self.ui.files_list_view.selectionModel().selectedIndexes()
         if len(sel_indexes):
             video_file_id = self.get_video_file_id(sel_indexes[0])
-            if self.window.to_album_dialog is None:
-                self.window.to_album_dialog = ChooseAlbumDialog(self.window)
+            self.window.to_album_dialog = ChooseAlbumDialog(self.window)
             if self.window.to_album_dialog.exec():
                 selection = self.window.to_album_dialog.album_selector.currentIndex()
                 album_id = self.window.to_album_dialog.albums[selection][0]
                 AlbumsModel.add_file_to_album(album_id, video_file_id)
-#TODO list of albums in ChooseAlbumDialog is not updated after deleting an album

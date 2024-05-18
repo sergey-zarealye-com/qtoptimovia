@@ -71,6 +71,11 @@ class AlbumsModel(QStandardItemModel):
 
     @staticmethod
     def add_file_to_album(album_id, video_file_id):
+        select_query = QSqlQuery()
+        select_query.exec(f"SELECT id FROM albums_video_files WHERE video_files_id={video_file_id} AND albums_id={album_id}")
+        if select_query.first():
+            # file already in an album
+            return
         insert_query = QSqlQuery()
         insert_query.prepare("""
                     INSERT INTO albums_video_files (video_files_id, albums_id)
@@ -95,8 +100,9 @@ class AlbumsModel(QStandardItemModel):
         insert_query.addBindValue(name)
         insert_query.addBindValue(new_pos)
         insert_query.exec()
+        alb_id = insert_query.lastInsertId()
         parent = self.item(0, 0)
-        parent.appendRow([QStandardItem(name), QStandardItem('')])
+        parent.appendRow([QStandardItem(name), QStandardItem('album id %d' % alb_id)])
         return parent.index()
 
     def del_album(self, album_id):
