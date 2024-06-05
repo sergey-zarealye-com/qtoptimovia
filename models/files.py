@@ -5,10 +5,11 @@ from PyQt5.QtSql import QSqlQuery, QSqlTableModel
 
 import os
 
+from models.base import PixBaseModel
 from workers.thumbnails_worker import ThumbnailsWorker
 
 
-class FilesModel(QAbstractTableModel):
+class FilesModel(PixBaseModel):
     FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
     FILE_EXTS = ['.mov', '.avi', '.mp4']
     COLUMNS = dict([
@@ -66,24 +67,6 @@ class FilesModel(QAbstractTableModel):
                             self.cpu_threadpool.start(worker)
                         return pix
 
-    def frame_extracted(self, id, obj):
-        frm = obj['frame']
-        h, w = frm.shape[:2]
-        im = QImage(QByteArray(frm.tobytes()), w, h, QImage.Format_RGB888)
-        if h > w:
-            im = im.scaledToHeight(self.THUMB_HEIGHT)
-        else:
-            im = im.scaledToWidth(self.THUMB_WIDTH)
-        pix = QPixmap.fromImage(im)
-        QPixmapCache.insert(obj['cache_key'], pix)
-        self.layoutChanged.emit()
-
-    def rowCount(self, index):
-        if index.isValid():
-            0
-        else:
-            return self.db_model.rowCount()
-
     def setData(self, index, value, role):
         if role == Qt.EditRole:
             col = index.column()
@@ -112,12 +95,6 @@ class FilesModel(QAbstractTableModel):
     #
     def get_editable_columns(self):
         return [self.fields.index('description')]
-
-    def columnCount(self, index):
-        if index.isValid():
-            0
-        else:
-            return self.db_model.columnCount()
 
     def setup_db(self):
         create_table_query = QSqlQuery()
@@ -284,7 +261,7 @@ class FilesModel(QAbstractTableModel):
             update_query.addBindValue(id)
             update_query.exec()
         else:
-            raise Exception('Program error: empy list of fields to update')
+            raise Exception('Program error: empty list of fields to update')
 
     @staticmethod
     def select_uniq_years_all(table_name, field):

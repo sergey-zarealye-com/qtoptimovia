@@ -38,7 +38,7 @@ class ExtSearchUI(UiBase):
         self.search_action = QAction(QIcon("icons/magnifier-zoom.png"), "Search")
 
         self.search_results_toolbar = QToolBar()
-        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add to montage")
+        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "To montage")
         self.goback_action = QAction(QIcon("icons/arrow-180.png"), "Back")
         self.gofwd_action = QAction(QIcon("icons/arrow.png"), "Forward")
         self.pager = QLabel('1')

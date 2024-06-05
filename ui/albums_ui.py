@@ -25,8 +25,8 @@ class AlbumsUI(UiBase):
         self.del_album_action = QAction(QIcon("icons/minus-button.png"), "Remove album")
 
         self.video_files_toolbar = QToolBar()
-        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "Add to album")
-        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "Add to montage")
+        self.to_album_action = QAction(QIcon("icons/folder--arrow.png"), "To album")
+        self.to_montage_action = QAction(QIcon("icons/clapperboard--plus.png"), "To montage")
 
         self.scenes_toolbar = QToolBar()
         self.play_action = QAction(QIcon("icons/film--arrow.png"), "Play")
