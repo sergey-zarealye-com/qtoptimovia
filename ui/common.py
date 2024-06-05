@@ -9,7 +9,7 @@ from models.scenes import SceneModel
 class ProgressDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         progress = index.data(Qt.DisplayRole)
-        if progress != '' and progress < 100:
+        if type(progress) != str and progress < 100:
             opt = QStyleOptionProgressBar()
             opt.rect = option.rect
             opt.minimum = 0

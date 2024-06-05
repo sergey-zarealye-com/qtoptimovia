@@ -43,9 +43,10 @@ class ThumbnailsWorker(QRunnable):
         try:
             cap.set(cv2.CAP_PROP_POS_MSEC, self.time_stamp * 1000)
             ret, bgr_frame = cap.retrieve()
-            self.frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
-            h, w = self.frame.shape[:2]
-            self.frame = cv2.resize(self.frame, (256, h*256//w), cv2.INTER_NEAREST)
+            if bgr_frame is not None:
+                self.frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
+                h, w = self.frame.shape[:2]
+                self.frame = cv2.resize(self.frame, (256, h*256//w), cv2.INTER_NEAREST)
             t = time() - t0
         except:
             traceback.print_exc()

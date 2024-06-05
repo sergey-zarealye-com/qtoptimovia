@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtCore import Qt, QDir
-from PyQt5.QtGui import QPixmapCache, QPixmap
+from PyQt5.QtGui import QPixmapCache, QPixmap, QColor
 from PyQt5.QtSql import QSqlTableModel
 
 from models.ColoredQFileSystemModel import ColoredQFileSystemModel
@@ -36,21 +36,34 @@ class FilesModel(PixBaseModel):
         self.db_model.setEditStrategy(QSqlTableModel.OnFieldChange)
         self.cpu_threadpool = None
 
+    def filename_from_index(self, index):
+        video_file_idx = index.siblingAtColumn(0)
+        video_file_id = self.db_model.data(video_file_idx)
+        fname, _ = FilesModelSQL.select_file_path(video_file_id)
+        return fname, video_file_id
+
     def data(self, index, role):
         row = index.row()
         col= index.column()
         data = self.db_model.data(self.db_model.index(row, col))
         if role == Qt.DisplayRole or role == Qt.EditRole:
             if col == self.get_progress_section() and data >= 100:
+                fname, video_file_id = self.filename_from_index(index)
+                if fname != None:
+                    file_status = ColoredQFileSystemModel.get_file_status(fname)
+                    if file_status == ColoredQFileSystemModel.STATUS_MISSING:
+                        return "FILE MISSING"
                 return ''
             else:
                 return data
         if role == Qt.DecorationRole:
             if col == self.get_progress_section():
                 if data >= 100:
-                    video_file_idx = index.siblingAtColumn(0)
-                    video_file_id = self.db_model.data(video_file_idx)
-                    fname, _ = FilesModelSQL.select_file_path(video_file_id)
+                    fname, video_file_id = self.filename_from_index(index)
+                    if fname != None:
+                        file_status = ColoredQFileSystemModel.get_file_status(fname)
+                        if file_status == ColoredQFileSystemModel.STATUS_MISSING:
+                            return QPixmap('icons/exclamation.png')
                     timestamps = FilesModelSQL.get_thumbnail_timestamp(video_file_id, 1)
                     if len(timestamps):
                         timestamp = timestamps[0]
@@ -66,6 +79,12 @@ class FilesModel(PixBaseModel):
                             worker.signals.result.connect(self.frame_extracted)
                             self.cpu_threadpool.start(worker)
                         return pix
+        if role == Qt.BackgroundColorRole:
+            path, video_file_id = self.filename_from_index(index)
+            if path != None:
+                file_status = ColoredQFileSystemModel.get_file_status(path)
+                if file_status == ColoredQFileSystemModel.STATUS_MISSING:
+                    return QColor('#ff8a80')
 
     def setData(self, index, value, role):
         if role == Qt.EditRole:
