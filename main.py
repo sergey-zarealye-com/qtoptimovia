@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QSplitter, QStackedWidget, QMessageBox, QProgressBar)
 
 from models.files import FilesModel
+from models.sql.files import FilesModelSQL
 from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
 from slots.files import FilesSlots
@@ -185,7 +186,7 @@ class MainWindow(QMainWindow):
         self.to_album_dialog = None
 
     def progress_fn(self, id:int, progress:float):
-        FilesModel.update_fields(id, dict(proc_progress=progress))
+        FilesModelSQL.update_fields(id, dict(proc_progress=progress))
         self.files_slots.update_layout(self.ui.pages[1].files_list_model)
         self.albums_slots.update_layout(self.ui.pages[0].files_list_model)
 
@@ -198,7 +199,7 @@ class MainWindow(QMainWindow):
         self.cpu_threadpool.start(worker)
 
     def metadata_thread_complete(self, id:int, metadata:dict):
-        fname, _ = FilesModel.select_file_path(id)
+        fname, _ = FilesModelSQL.select_file_path(id)
         worker = VideoImportWorker(id=id,
                                    video_file_path=fname,
                                    metadata=metadata,
@@ -210,8 +211,8 @@ class MainWindow(QMainWindow):
         self.gpu_threadpool.start(worker)
 
     def init_importing_workers(self):
-        for id in FilesModel.select_nonstarted_imports():
-            fname, _ = FilesModel.select_file_path(id)
+        for id in FilesModelSQL.select_nonstarted_imports():
+            fname, _ = FilesModelSQL.select_file_path(id)
             worker = MetadataWorker(id=id,
                                    video_file_path=fname
                                    )

@@ -7,6 +7,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlTableModel
 
 from models.base import PixBaseModel
 from models.files import FilesModel
+from models.sql.files import FilesModelSQL
 from workers.thumbnails_worker import ThumbnailsWorker
 
 
@@ -58,7 +59,7 @@ class SceneModel(PixBaseModel):
             timestamp = self.db_model.data(self.db_model.index(row, col))
             video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
             video_file_id = self.db_model.data(video_file_idx)
-            fname, _ = FilesModel.select_file_path(video_file_id)
+            fname, _ = FilesModelSQL.select_file_path(video_file_id)
             cache_key = f"{video_file_id}_{timestamp:.2f}"
             pix = QPixmapCache.find(cache_key)
             if not pix:

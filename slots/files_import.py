@@ -3,6 +3,7 @@ import os
 from models.albums import AlbumsModel
 from models.files import FilesModel
 from models.scenes import SceneModel
+from models.sql.files import FilesModelSQL
 from slots.base import SlotsBase
 
 
@@ -13,11 +14,11 @@ class FilesImportSlots(SlotsBase):
         self.video_file_id_column = 0
 
     def import_video_files(self, signal):
-        FilesModel.import_files(self.window.video_files_in_directory)
+        FilesModelSQL.import_files(self.window.video_files_in_directory)
         self.update_layout(self.ui.files_list_model)
 
     def update_metadata(self, id:int, metadata:dict):
-        FilesModel.update_fields(id, metadata)
+        FilesModelSQL.update_fields(id, metadata)
         self.update_layout(self.ui.files_list_model)
 
     def import_thread_complete(self, id: int):

@@ -8,6 +8,7 @@ import pyqtgraph as pg
 from models.files import FilesModel
 from models.scenes import SceneModel
 from models.search_results import SearchResult
+from models.sql.files import FilesModelSQL
 from ui.common import get_fixed_spacer, get_horizontal_spacer, c_setup_scenes_toolbar, setup_scenes_view
 from ui.ui_base import UiBase
 
@@ -15,7 +16,7 @@ from ui.ui_base import UiBase
 class ExtSearchUI(UiBase):
     def __init__(self):
 
-        imported_at_min, imported_at_max, created_at_min, created_at_max = FilesModel.get_minmax_dates()
+        imported_at_min, imported_at_max, created_at_min, created_at_max = FilesModelSQL.get_minmax_dates()
 
         # Form fields
         self.description = QLineEdit()
