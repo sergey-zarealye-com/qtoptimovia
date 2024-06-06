@@ -1,12 +1,11 @@
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QDialog, QDialogButtonBox, QTabWidget, QLineEdit, QComboBox, \
-    QFormLayout, QGroupBox, QSizePolicy, QPushButton
-from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QDialog, QDialogButtonBox, QTabWidget, QLineEdit, QComboBox, \
+    QFormLayout, QSizePolicy, QPushButton, QTreeView, QAbstractItemView, QTableView, QHeaderView
 
+from models.preferences.MontageAlbumsListModel import MontageAlbumsListModel
 from ui.windows.vertical_tabbar import VerticalTabWidget
-import qtmodern.styles
-import qtmodern.windows
+
 
 class PreferencesWindow(QDialog):
     def __init__(self, main_window):
@@ -27,6 +26,9 @@ class PreferencesWindow(QDialog):
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
+
+        self.montage_albums_list_model = MontageAlbumsListModel()
+        self.montage_albums_list = QTableView()
 
         self.layout = QVBoxLayout()
         tabs = VerticalTabWidget()
@@ -73,9 +75,22 @@ class PreferencesWindow(QDialog):
         return groupBox
 
     def montage_tab(self):
-        form_layout = QFormLayout()
-        form_layout.addRow('Some settings', QLineEdit())
+        self.montage_albums_list.setModel(self.montage_albums_list_model)
+        self.montage_albums_list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        horizontal_header = self.montage_albums_list.horizontalHeader()
+        vertical_header = self.montage_albums_list.verticalHeader()
+        horizontal_header.setSectionResizeMode(QHeaderView.Interactive)
+        vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        horizontal_header.setStretchLastSection(True)
+        vertical_header.hide()
+
+        for i, f in enumerate(self.montage_albums_list_model.fields):
+            if f not in MontageAlbumsListModel.COLUMNS:
+                self.montage_albums_list.setColumnHidden(i, True)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.montage_albums_list)
         groupBox = QWidget()
-        groupBox.setLayout(form_layout)
+        groupBox.setLayout(layout)
         groupBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         return groupBox

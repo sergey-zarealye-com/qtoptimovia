@@ -1,6 +1,7 @@
 from PyQt5.QtGui import QStandardItem
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtGui import QStandardItemModel
+from PyQt5.QtWidgets import QMessageBox
 
 from models.sql.albums import AlbumsModelSQL
 
@@ -49,6 +50,12 @@ class AlbumsModel(QStandardItemModel):
         insert_query.addBindValue(new_pos)
         insert_query.exec()
         alb_id = insert_query.lastInsertId()
+        if alb_id is None:
+            QMessageBox.warning(
+                None,
+                "Warning",
+                f"Album {name} already exists"
+            )
         parent = self.item(0, 0)
         parent.appendRow([QStandardItem(name), QStandardItem('album id %d' % alb_id)])
         return parent.index()

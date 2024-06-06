@@ -242,6 +242,7 @@ class MainWindow(QMainWindow):
 
         if self.preferences_win is None:
             self.preferences_win = PreferencesWindow(self)
+        self.preferences_win.montage_albums_list_model.update_layout()
         self.preferences_win.open()
 
 def except_hook(cls, exception, traceback):

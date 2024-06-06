@@ -18,7 +18,7 @@ class AlbumsModelSQL:
             f"""
             CREATE TABLE IF NOT EXISTS albums (
                 id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
-                name VARCHAR NOT NULL,
+                name VARCHAR NOT NULL UNIQUE,
                 created_at DATETIME NOT NULL,
                 position INT NOT NULL,
                 is_visible SMALLINT DEFAULT 1
