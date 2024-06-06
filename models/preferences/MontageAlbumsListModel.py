@@ -26,29 +26,33 @@ class MontageAlbumsListModel(QAbstractTableModel):
 
     def flags(self, index):
         col = index.column()
-        if col in self.get_editable_columns():
-            return Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        if col == self.get_editable_column():
+            return Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsUserCheckable
         else:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-    def get_editable_columns(self):
-        return [self.fields.index('is_visible')]
+    def get_editable_column(self):
+        return self.fields.index('is_visible')
 
     def setData(self, index, value, role):
-        if role == Qt.EditRole:
+        if role == Qt.CheckStateRole:
             col = index.column()
-            if col in self.get_editable_columns():
-                ok = self.db_model.setData(index, value, role)
+            if col == self.get_editable_column():
+                checked = value == Qt.Checked
+                ok = self.db_model.setData(index, int(not checked))
                 return ok
-            else:
-                return False
-        return True
+        # return True
 
     def data(self, index, role):
         row = index.row()
-        col= index.column()
+        col = index.column()
         data = self.db_model.data(self.db_model.index(row, col))
-        if role == Qt.DisplayRole or role == Qt.EditRole:
+        if role == Qt.CheckStateRole and col == self.get_editable_column():
+            if data == 0:
+                return Qt.Checked
+            else:
+                return Qt.Unchecked
+        if role == Qt.DisplayRole and col != self.get_editable_column():
             return data
 
     def rowCount(self, index):
