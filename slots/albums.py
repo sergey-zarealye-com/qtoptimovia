@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMessageBox
 
 from models.albums import AlbumsModel
 from models.scenes import SceneModel
+from models.sql.albums import AlbumsModelSQL
 from slots.base import SlotsBase
 from ui.windows.add_album import AddAlbumDialog
 from workers.sim_search import SimSearcher
@@ -29,7 +30,7 @@ class AlbumsSlots(SlotsBase):
         if len(data) == 3:
             if data[0] == 'album' and data[1] == 'id':
                 album_id = int(data[2])
-                video_file_id_list = AlbumsModel.select_files_for_album(album_id)
+                video_file_id_list = AlbumsModelSQL.select_files_for_album(album_id)
                 self.update_layout(self.ui.files_list_model, 
                                    set_filter=f"id IN ({','.join(video_file_id_list)})")
             else:
@@ -72,3 +73,6 @@ class AlbumsSlots(SlotsBase):
                         idx = self.window.ui.pages[0].tree_model.del_album(album_id)
                         self.ui.tree_model.itemFromIndex(p).removeRow(r)
                         self.ui.tree.setExpanded(idx, True)
+                        self.update_layout(self.ui.files_list_model, set_filter='0')
+                        self.clear_scenes_view()
+                        self.ui.tree.clearSelection()

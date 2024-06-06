@@ -1,13 +1,14 @@
 from PyQt5.QtWidgets import QDialog, QLineEdit, QDialogButtonBox, QFormLayout, QWidget, QVBoxLayout, QComboBox
 
 from models.albums import AlbumsModel
+from models.sql.albums import AlbumsModelSQL
 
 
 class ChooseAlbumDialog(QDialog):
     def __init__(self, main_window):
         super().__init__(main_window)
         self.album_selector = QComboBox()
-        self.albums = AlbumsModel.select_albums()
+        self.albums = AlbumsModelSQL.select_albums()
         self.album_selector.addItems([a[1] for a in self.albums])
         QBtn = QDialogButtonBox.Save | QDialogButtonBox.Cancel
         layout = QVBoxLayout()

@@ -1,4 +1,5 @@
 from models.albums import AlbumsModel
+from models.sql.albums import AlbumsModelSQL
 from ui.windows.choose_album import ChooseAlbumDialog
 
 
@@ -35,4 +36,4 @@ class SlotsBase():
             if self.window.to_album_dialog.exec():
                 selection = self.window.to_album_dialog.album_selector.currentIndex()
                 album_id = self.window.to_album_dialog.albums[selection][0]
-                AlbumsModel.add_file_to_album(album_id, video_file_id)
+                AlbumsModelSQL.add_file_to_album(album_id, video_file_id)
