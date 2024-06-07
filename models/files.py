@@ -11,8 +11,8 @@ from workers.thumbnails_worker import ThumbnailsWorker
 
 
 class FilesModel(PixBaseModel):
-    FILE_FILTERS = ['*.mov', '*.avi', '*.mp4']
-    FILE_EXTS = ['.mov', '.avi', '.mp4']
+    FILE_FILTERS = ['*.mov', '*.avi', '*.mp4', '*.mkv']
+    FILE_EXTS = ['.mov', '.avi', '.mp4', '.mkv']
     COLUMNS = dict([
         ("description", "Description"),
         ("created_at", "Created at"),

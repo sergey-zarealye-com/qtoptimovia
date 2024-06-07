@@ -7,7 +7,9 @@ import traceback
 
 from PyQt5.QtCore import *
 
+from ui.common import timecode_to_seconds
 from workers.worker_signals import WorkerSignals
+
 
 
 class MetadataWorker(QRunnable):
@@ -77,8 +79,14 @@ class MetadataWorker(QRunnable):
                 raise Exception("File seems not to contain any video.")
             for stream in parsed[u'streams']:
                 if stream[u'codec_type'] == 'audio':
-                    aac_rate = stream[u'bit_rate']
-                    audio_channels = stream[u'channels']
+                    if 'bit_rate' in stream:
+                        aac_rate = stream[u'bit_rate']
+                    else:
+                        aac_rate = 0
+                    if 'channels' in stream:
+                        audio_channels = stream[u'channels']
+                    else:
+                        audio_channels = 0
                 if stream[u'codec_type'] == 'video':
                     if u'tags' in stream:
                         if u'rotate' in stream[u'tags']:
@@ -121,7 +129,16 @@ class MetadataWorker(QRunnable):
                     else:
                         dar = (1, 1)
                     start = float(stream[u'start_time'])
-                    self.duration = float(stream[u'duration'])
+                    if 'duration' in stream:
+                        self.duration = float(stream[u'duration'])
+                    elif 'tags' in stream and 'DURATION' in stream['tags']:
+                        timecode = stream['tags'][u'DURATION']
+                        self.duration = timecode_to_seconds(timecode)
+                    elif 'tags' in stream and 'duration' in stream['tags']:
+                        timecode = stream['tags'][u'duration']
+                        self.duration = timecode_to_seconds(timecode)
+                    else:
+                        raise Exception ('Duration not found in meta data', self.fname)
 
             aspect = float(sar[0]) / float(sar[1])
             data = dict(fps=fps, created_at=creation_time, duration=self.duration,
