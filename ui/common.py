@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (QSizePolicy, QHeaderView, QStyledItemDelegate, QSty
 
 from models.files import FilesModel
 from models.scenes import SceneModel
+import datetime as dt
 
 
 class ProgressDelegate(QStyledItemDelegate):
@@ -101,3 +102,8 @@ def get_horizontal_spacer():
     spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
     spacer.setEnabled(False)
     return spacer
+
+def timecode_to_seconds(tc:str):
+    hms = tc[:8].split(':')
+    t = float(hms[0]) * 3600 + float(hms[1]) * 60 + float(hms[2])
+    return t

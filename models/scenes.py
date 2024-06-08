@@ -56,24 +56,29 @@ class SceneModel(PixBaseModel):
         if role == Qt.DecorationRole \
                 and col != duration_col \
                 and col != start_col:
-            timestamp = self.db_model.data(self.db_model.index(row, col))
-            video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
-            video_file_id = self.db_model.data(video_file_idx)
-            fname, _ = FilesModelSQL.select_file_path(video_file_id)
-            cache_key = f"{video_file_id}_{timestamp:.2f}"
-            pix = QPixmapCache.find(cache_key)
-            if not pix:
-                QPixmapCache.insert(cache_key, QPixmap())
-                worker = ThumbnailsWorker(id=video_file_id,
-                                          ts=timestamp,
-                                          video_file_path=fname,
-                                          cache_key=cache_key,
-                                        )
-                worker.signals.error.connect(self.print_error)
-                worker.signals.result.connect(self.frame_extracted)
-                worker.signals.finished.connect(self.timeit)
-                self.cpu_threadpool.start(worker)
-            return pix
+            visible_row_start = self.ui.scenes_list_view.rowAt(0)
+            visible_row_end = self.ui.scenes_list_view.rowAt(self.ui.scenes_list_view.height())
+            if visible_row_start <= row <= visible_row_end:
+                timestamp = self.db_model.data(self.db_model.index(row, col))
+                video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
+                video_file_id = self.db_model.data(video_file_idx)
+                fname, _ = FilesModelSQL.select_file_path(video_file_id)
+                cache_key = f"{video_file_id}_{timestamp:.2f}"
+                pix = QPixmapCache.find(cache_key)
+                if not pix:
+                    with open('data/debug.log', 'a') as log:
+                        log.write(f"{visible_row_start} {row} {visible_row_end}      {cache_key} \n")
+                    QPixmapCache.insert(cache_key, QPixmap())
+                    worker = ThumbnailsWorker(id=video_file_id,
+                                            ts=timestamp,
+                                            video_file_path=fname,
+                                            cache_key=cache_key,
+                                            )
+                    worker.signals.error.connect(self.print_error)
+                    worker.signals.result.connect(self.frame_extracted)
+                    worker.signals.finished.connect(self.timeit)
+                    self.cpu_threadpool.start(worker)
+                return pix
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
