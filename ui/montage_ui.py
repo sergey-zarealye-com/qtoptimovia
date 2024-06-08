@@ -1,7 +1,14 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QScrollArea
 
+from models.montage_headers import MontageHeadersModel
+from models.montage_materials import MontageMaterialsModel
+
 
 class MontageUI:
+
+    def __init__(self):
+        self.montage_headers = MontageHeadersModel()
+        self.montage_materials = MontageMaterialsModel()
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""

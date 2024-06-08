@@ -123,9 +123,6 @@ class FilesModelSQL:
             fcount = 0
             for fn in flist:
                     path, fname = os.path.split(fn)
-                    # select_query.addBindValue(path)
-                    # select_query.addBindValue(fname)
-                    # select_query.exec()
                     if not FilesModelSQL.is_file_imported(fn):
                             insert_query.addBindValue(fname)
                             insert_query.addBindValue(path)

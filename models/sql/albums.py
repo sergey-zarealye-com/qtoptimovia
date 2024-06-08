@@ -38,7 +38,13 @@ class AlbumsModelSQL:
         create_idx_query1 = QSqlQuery()
         create_idx_query1.exec(
             f"""
-            CREATE INDEX IF NOT EXISTS idx_albums_video_files ON albums(video_files)
+            CREATE INDEX IF NOT EXISTS idx_albums_video_files_video_files_id ON albums_video_files(video_files_id)
+            """
+        )
+        create_idx_query2 = QSqlQuery()
+        create_idx_query2.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_albums_video_files_albums_id ON albums_video_files(albums_id)
             """
         )
         return [

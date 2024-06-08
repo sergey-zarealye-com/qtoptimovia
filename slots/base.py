@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QHeaderView
 from models.scenes import SceneModel
 from models.sql.albums import AlbumsModelSQL
 from models.sql.files import FilesModelSQL
+from models.sql.montage_headers import MontageHeadersModelSQL
+from models.sql.montage_materials import MontageMaterialsModelSQL
 from ui.windows.choose_album import ChooseAlbumDialog
 
 
@@ -13,6 +15,8 @@ class SlotsBase():
         self.ui.info_action.setDisabled(True)  # Info tool button
         if hasattr(self.ui, 'to_album_action'):
             self.ui.to_album_action.setDisabled(True)
+        if hasattr(self.ui, 'to_montage_action'):
+            self.ui.to_montage_action.setDisabled(True)
 
     def show_scenes(self, signal):
         video_file_id = self.get_video_file_id(signal)
@@ -24,6 +28,8 @@ class SlotsBase():
         self.ui.info_action.setEnabled(True)
         if hasattr(self.ui, 'to_album_action'):
             self.ui.to_album_action.setEnabled(True)
+        if hasattr(self.ui, 'to_montage_action'):
+            self.ui.to_montage_action.setDisabled(MontageMaterialsModelSQL.is_video_in_montage(video_file_id))
 
     def update_layout(self, model, set_filter=None):
         if set_filter != None:
@@ -44,3 +50,12 @@ class SlotsBase():
                 selection = self.window.to_album_dialog.album_selector.currentIndex()
                 album_id = self.window.to_album_dialog.albums[selection][0]
                 AlbumsModelSQL.add_file_to_album(album_id, video_file_id)
+
+    def to_montage(self, signal):
+        sel_indexes = self.ui.files_list_view.selectionModel().selectedIndexes()
+        if len(sel_indexes):
+            video_file_id = self.get_video_file_id(sel_indexes[0])
+            montage_header_id = MontageHeadersModelSQL.get_current()
+            if montage_header_id is not None:
+                id = MontageMaterialsModelSQL.add_to_montage(montage_header_id, video_file_id)
+                self.ui.to_montage_action.setEnabled(id is None)

@@ -1,4 +1,6 @@
 from models.scenes import SceneModel
+from models.sql.montage_headers import MontageHeadersModelSQL
+from models.sql.montage_materials import MontageMaterialsModelSQL
 from models.sql.scenes import SceneModelSQL
 from slots.base import SlotsBase
 from workers.ext_searcher import ExtSearcher
@@ -104,3 +106,12 @@ class ExtSearchSlots(SlotsBase):
         if page == 0:
             self.ui.gofwd_action.setDisabled(False)
             self.ui.goback_action.setDisabled(True)
+
+    def to_montage(self, signal):
+        sel_indexes = self.ui.search_results_view.selectionModel().selectedIndexes()
+        if len(sel_indexes):
+            video_file_id = self.get_video_file_id(sel_indexes[0])
+            montage_header_id = MontageHeadersModelSQL.get_current()
+            if montage_header_id is not None:
+                id = MontageMaterialsModelSQL.add_to_montage(montage_header_id, video_file_id)
+                self.ui.to_montage_action.setEnabled(id is None)

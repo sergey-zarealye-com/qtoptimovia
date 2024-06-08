@@ -150,6 +150,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].files_list_view.clicked.connect(self.files_slots.show_scenes)
         self.ui.pages[1].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
         self.ui.pages[1].to_album_action.triggered.connect(self.files_slots.to_album)
+        self.ui.pages[1].to_montage_action.triggered.connect(self.files_slots.to_montage)
 
         # Albums tree signals:
         self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
@@ -158,6 +159,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[0].add_album_action.triggered.connect(self.albums_slots.add_album)
         self.ui.pages[0].del_album_action.triggered.connect(self.albums_slots.del_album)
         self.ui.pages[0].to_album_action.triggered.connect(self.albums_slots.to_album)
+        self.ui.pages[0].to_montage_action.triggered.connect(self.albums_slots.to_montage)
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)
@@ -167,6 +169,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].gofwd_action.triggered.connect(self.search_slots.search_results_fwd)
         self.ui.pages[4].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
         self.ui.pages[4].find_similar_from_sr_action.triggered.connect(self.search_slots.find_similar_scenes)
+        self.ui.pages[4].to_montage_action.triggered.connect(self.search_slots.to_montage)
 
         # Stubs
         self.video_files_in_directory = None

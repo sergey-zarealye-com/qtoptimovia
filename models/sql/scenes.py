@@ -27,6 +27,24 @@ class SceneModelSQL:
             CREATE INDEX IF NOT EXISTS idx_scenes_video_file_id ON scenes(video_file_id)
             """
         )
+        create_idx_query2 = QSqlQuery()
+        create_idx_query2.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_scenes_video_file_id_scene_start ON scenes(video_file_id, scene_start)
+            """
+        )
+        create_idx_query3 = QSqlQuery()
+        create_idx_query3.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_scenes_scene_start ON scenes(scene_start)
+            """
+        )
+        create_idx_query4 = QSqlQuery()
+        create_idx_query4.exec(
+            f"""
+            CREATE INDEX IF NOT EXISTS idx_scenes_duration ON scenes(scene_end-scene_start)
+            """
+        )
         return ['id',
                 'video_file_id',
                 'scene_start',
@@ -81,3 +99,17 @@ class SceneModelSQL:
     @staticmethod
     def frombuffer(buff):
         return np.frombuffer(buff, dtype=np.float16)
+
+    @staticmethod
+    def select_style_template_scenes():
+        create_table_query = QSqlQuery()
+        create_table_query.exec("""
+            SELECT scenes.id, video_file_id, scene_start, scene_end-scene_start AS duration
+            FROM scenes
+            JOIN albums_video_files ON albums_video_files.video_files_id=scenes.video_file_id
+            JOIN albums ON albums.id = albums_video_files.albums_id
+            WHERE 
+                albums.is_visible = 1 AND
+                duration > 1 AND scene_start > 10
+            ORDER BY video_file_id, scene_start
+        """)
