@@ -8,6 +8,7 @@ from PyQt5.QtSql import QSqlQuery, QSqlDatabase
 from PyQt5.QtWidgets import QMessageBox
 
 from models.scenes import SceneModel
+from models.sql.scenes import SceneModelSQL
 from workers.worker_signals import WorkerSignals
 
 
@@ -73,7 +74,7 @@ class SceneIndexBuilder(QRunnable):
                 id = select_query.value(0)
                 buff = select_query.value(1)
                 id_list.append(id)
-                batch.append(SceneModel.frombuffer(buff))
+                batch.append(SceneModelSQL.frombuffer(buff))
             if len(id_list):
                 yield id_list, np.array(batch)
                 offset += lim

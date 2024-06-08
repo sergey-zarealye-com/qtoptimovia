@@ -4,6 +4,7 @@ from models.albums import AlbumsModel
 from models.files import FilesModel
 from models.scenes import SceneModel
 from models.sql.files import FilesModelSQL
+from models.sql.scenes import SceneModelSQL
 from slots.base import SlotsBase
 
 
@@ -29,4 +30,4 @@ class FilesImportSlots(SlotsBase):
         scene_start = obj['scene_start']
         scene_end = obj['scene_end']
         scene_embedding = obj['scene_embedding']
-        scene_id = SceneModel.insert(video_file_id, scene_start, scene_end, scene_embedding)
+        scene_id = SceneModelSQL.insert(video_file_id, scene_start, scene_end, scene_embedding)

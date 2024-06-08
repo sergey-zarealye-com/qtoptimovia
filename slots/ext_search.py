@@ -1,4 +1,5 @@
 from models.scenes import SceneModel
+from models.sql.scenes import SceneModelSQL
 from slots.base import SlotsBase
 from workers.ext_searcher import ExtSearcher
 from workers.sim_search import SimSearcher
@@ -75,7 +76,7 @@ class ExtSearchSlots(SlotsBase):
         scene_id_idx = signal.siblingAtColumn(0)
         scene_id = signal.model().db_model.data(scene_id_idx)
         col = signal.column()
-        fv = SceneModel.select_embedding(scene_id)
+        fv = SceneModelSQL.select_embedding(scene_id)
         worker = SimSearcher(fv=fv)
         worker.signals.result.connect(self.show_sim_search_results)
         self.window.cpu_threadpool.start(worker)
