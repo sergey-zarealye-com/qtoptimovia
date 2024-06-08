@@ -1,9 +1,7 @@
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTreeView,
-                             QSizePolicy, QTableView, QApplication,
-                             QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QStyle, QToolBar, QAction,
-                             QMenu)
-from PyQt5.QtCore import Qt, QSize
+                             QSizePolicy, QTableView, QToolBar, QAction)
 
 from models.files import FilesModel
 from models.scenes import SceneModel

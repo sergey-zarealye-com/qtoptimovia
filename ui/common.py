@@ -46,10 +46,8 @@ def setup_scenes_view(view, model):
     # QTableView Headers
     horizontal_header = view.horizontalHeader()
     vertical_header = view.verticalHeader()
-    vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
+    # vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
     horizontal_header.setStretchLastSection(True)
-    horizontal_header.setSectionResizeMode(QHeaderView.ResizeToContents)
-
     horizontal_header.swapSections(3,4)
     horizontal_header.swapSections(4,5)
     horizontal_header.swapSections(5,6)

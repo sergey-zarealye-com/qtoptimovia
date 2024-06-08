@@ -241,3 +241,22 @@ class FilesModelSQL:
                     return imported_at_min, imported_at_max, created_at_min, created_at_max
             else:
                     return [None] * 4
+
+    @staticmethod
+    def get_thumb_height(video_file_id, THUMB_W, THUMB_H):
+        w, h = FilesModelSQL.get_frame_size(video_file_id)
+        if h > w:
+            return THUMB_H
+        else:
+            return THUMB_W / w * h
+
+    @staticmethod
+    def get_frame_size(video_file_id):
+        select_query = QSqlQuery()
+        select_query.prepare(f"SELECT width, height FROM video_files WHERE id=?")
+        select_query.addBindValue(video_file_id)
+        select_query.exec()
+        if select_query.first():
+            width = select_query.value(0)
+            height = select_query.value(1)
+            return width, height

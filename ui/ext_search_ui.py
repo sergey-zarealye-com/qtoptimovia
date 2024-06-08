@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
                              QFormLayout, QLineEdit, QGroupBox, QSizePolicy,
-                             QDateEdit, QCheckBox, QToolBar, QAction, QTableView, QMenu)
+                             QDateEdit, QCheckBox, QToolBar, QAction, QTableView, QMenu, QHeaderView)
 from PyQt5.QtCore import QDate, Qt, QSize
 import pyqtgraph as pg
 
@@ -97,6 +97,7 @@ class ExtSearchUI(UiBase):
             self.setup_search_results_toolbar()
             layout.setMenuBar(self.search_results_toolbar)
             setup_scenes_view(self.search_results_view, self.search_results_model)
+            self.search_results_view.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             layout.addWidget(self.search_results_view)
         elif col == 2:
             self.setup_scenes_toolbar()

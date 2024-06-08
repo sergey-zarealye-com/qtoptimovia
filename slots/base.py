@@ -1,5 +1,8 @@
-from models.albums import AlbumsModel
+from PyQt5.QtWidgets import QHeaderView
+
+from models.scenes import SceneModel
 from models.sql.albums import AlbumsModelSQL
+from models.sql.files import FilesModelSQL
 from ui.windows.choose_album import ChooseAlbumDialog
 
 
@@ -13,6 +16,10 @@ class SlotsBase():
 
     def show_scenes(self, signal):
         video_file_id = self.get_video_file_id(signal)
+        thumb_height = FilesModelSQL.get_thumb_height(video_file_id, SceneModel.THUMB_WIDTH, SceneModel.THUMB_HEIGHT)
+        vheader = self.ui.scenes_list_view.verticalHeader()
+        vheader.setDefaultSectionSize(thumb_height)
+        vheader.sectionResizeMode(QHeaderView.Fixed)
         self.update_layout(self.ui.scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
         self.ui.info_action.setEnabled(True)
         if hasattr(self.ui, 'to_album_action'):

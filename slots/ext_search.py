@@ -42,9 +42,9 @@ class ExtSearchSlots(SlotsBase):
                                                   imported_at_from, imported_at_to)
         self.ui.search_results_view.clearSelection()
         self.clear_scenes_view()
+        # TODO in search results thumbnails do not lazy-load sometimes, and remain empty rows
         self.ui.search_results_model.layoutChanged.emit()
         self.ui.pager.setText(str(page + 1))
-
         self.ui.plot_graph.clear()
         self.ui.plot_graph.plot(range(len(distances)), distances)
         if page == 0:
