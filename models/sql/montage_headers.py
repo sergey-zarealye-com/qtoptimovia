@@ -40,7 +40,6 @@ class MontageHeadersModelSQL:
             VALUES (DATETIME('now', 'localtime'), ?, ?, ?)
             """
         )
-        insert_query.addBindValue(created_at)
         insert_query.addBindValue(name)
         insert_query.addBindValue(params)
         insert_query.addBindValue(is_current)

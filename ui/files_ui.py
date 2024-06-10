@@ -12,6 +12,7 @@ from ui.ui_base import UiBase
 
 class FilesUI(UiBase):
     def __init__(self):
+        super().__init__()
         self.tree = QTreeView()
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel(1)

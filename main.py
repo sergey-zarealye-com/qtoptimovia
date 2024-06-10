@@ -151,6 +151,8 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
         self.ui.pages[1].to_album_action.triggered.connect(self.files_slots.to_album)
         self.ui.pages[1].to_montage_action.triggered.connect(self.files_slots.to_montage)
+        self.ui.pages[1].scenes_list_view.verticalScrollBar().sliderMoved.connect(self.files_slots.slider_moved)
+        self.ui.pages[1].scenes_list_view.verticalScrollBar().sliderReleased.connect(self.files_slots.slider_released)
 
         # Albums tree signals:
         self.ui.pages[0].tree.clicked.connect(self.albums_slots.show_files_for_date)
@@ -160,6 +162,8 @@ class MainWindow(QMainWindow):
         self.ui.pages[0].del_album_action.triggered.connect(self.albums_slots.del_album)
         self.ui.pages[0].to_album_action.triggered.connect(self.albums_slots.to_album)
         self.ui.pages[0].to_montage_action.triggered.connect(self.albums_slots.to_montage)
+        self.ui.pages[0].scenes_list_view.verticalScrollBar().sliderMoved.connect(self.albums_slots.slider_moved)
+        self.ui.pages[0].scenes_list_view.verticalScrollBar().sliderReleased.connect(self.albums_slots.slider_released)
 
         # Search form signals:
         self.ui.pages[4].search_action.triggered.connect(self.search_slots.search_scenes)

@@ -52,7 +52,13 @@ class MontageMaterialsModelSQL:
     @staticmethod
     def is_video_in_montage(video_file_id):
         select_query = QSqlQuery()
-        select_query.prepare("SELECT id FROM montage_materials WHERE video_file_id=? LIMIT 1")
+        select_query.prepare("""
+            SELECT montage_materials.id FROM montage_materials 
+            JOIN montage_headers ON montage_headers.id=montage_materials.montage_header_id
+            WHERE montage_headers.is_current=1 
+            AND montage_materials.video_file_id=?
+            LIMIT 1
+        """)
         select_query.addBindValue(video_file_id)
         select_query.exec()
         return select_query.first()

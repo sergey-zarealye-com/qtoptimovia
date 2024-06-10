@@ -59,3 +59,10 @@ class SlotsBase():
             if montage_header_id is not None:
                 id = MontageMaterialsModelSQL.add_to_montage(montage_header_id, video_file_id)
                 self.ui.to_montage_action.setEnabled(id is None)
+
+    def slider_moved(self, smth):
+        self.ui.scenes_list_model.slider_moved = True
+
+    def slider_released(self):
+        self.ui.scenes_list_model.slider_moved = False
+        self.ui.scenes_list_model.layoutChanged.emit()

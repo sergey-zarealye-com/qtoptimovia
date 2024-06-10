@@ -58,8 +58,9 @@ class SceneModel(PixBaseModel):
                 and col != start_col:
             visible_row_start = self.ui.scenes_list_view.rowAt(0)
             visible_row_end = self.ui.scenes_list_view.rowAt(self.ui.scenes_list_view.height())
-            if visible_row_end <= 0 and  visible_row_start <= row \
-                    or visible_row_start <= row <= visible_row_end:
+            if not self.ui.scenes_list_model.slider_moved and (
+                    visible_row_end <= 0 and  visible_row_start <= row
+                    or visible_row_start <= row <= visible_row_end):
                 timestamp = self.db_model.data(self.db_model.index(row, col))
                 video_file_idx = index.siblingAtColumn(self.get_video_file_id_column())
                 video_file_id = self.db_model.data(video_file_idx)

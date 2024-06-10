@@ -5,6 +5,10 @@ from PyQt5.QtWidgets import QMessageBox
 
 class PixBaseModel(QAbstractTableModel):
 
+    def __init__(self):
+        super().__init__()
+        self.slider_moved = False
+
     def frame_extracted(self, id, obj):
         frm = obj['frame']
         if frm is not None:

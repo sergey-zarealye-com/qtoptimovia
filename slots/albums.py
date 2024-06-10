@@ -76,3 +76,4 @@ class AlbumsSlots(SlotsBase):
                         self.update_layout(self.ui.files_list_model, set_filter='0')
                         self.clear_scenes_view()
                         self.ui.tree.clearSelection()
+

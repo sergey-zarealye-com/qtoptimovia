@@ -15,7 +15,7 @@ from ui.ui_base import UiBase
 
 class ExtSearchUI(UiBase):
     def __init__(self):
-
+        super().__init__()
         imported_at_min, imported_at_max, created_at_min, created_at_max = FilesModelSQL.get_minmax_dates()
 
         # Form fields

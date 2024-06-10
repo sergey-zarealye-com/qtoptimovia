@@ -13,6 +13,7 @@ from ui.ui_base import UiBase
 class AlbumsUI(UiBase):
 
     def __init__(self):
+        super(UiBase, self).__init__()
         self.tree_model = AlbumsModel()
         self.tree = QTreeView()
         self.files_list_view = QTableView()
