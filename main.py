@@ -174,11 +174,8 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].find_similar_action.triggered.connect(self.search_slots.find_similar_scenes)
         self.ui.pages[4].find_similar_from_sr_action.triggered.connect(self.search_slots.find_similar_scenes)
         self.ui.pages[4].to_montage_action.triggered.connect(self.search_slots.to_montage)
-
         self.ui.pages[4].scenes_list_view.verticalScrollBar().sliderMoved.connect(self.search_slots.slider_moved)
         self.ui.pages[4].scenes_list_view.verticalScrollBar().sliderReleased.connect(self.search_slots.slider_released)
-        self.ui.pages[4].search_results_view.verticalScrollBar().sliderMoved.connect(self.search_slots.sr_slider_moved)
-        self.ui.pages[4].search_results_view.verticalScrollBar().sliderReleased.connect(self.search_slots.sr_slider_released)
 
         # Stubs
         self.video_files_in_directory = None

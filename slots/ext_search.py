@@ -116,12 +116,3 @@ class ExtSearchSlots(SlotsBase):
             if montage_header_id is not None:
                 id = MontageMaterialsModelSQL.add_to_montage(montage_header_id, video_file_id)
                 self.ui.to_montage_action.setEnabled(id is None)
-
-    def sr_slider_moved(self, smth):
-        print('move')
-        self.ui.search_results_model.slider_moved = True
-
-    def sr_slider_released(self):
-        print('release')
-        self.ui.search_results_model.slider_moved = False
-        self.ui.search_results_model.layoutChanged.emit()
