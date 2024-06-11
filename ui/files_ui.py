@@ -17,7 +17,7 @@ class FilesUI(UiBase):
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel(1)
         self.scenes_list_view = QTableView()
-        self.scenes_list_model = SceneModel(self)
+        self.scenes_list_model = SceneModel(self, 1, self.scenes_list_view)
 
         self.tree_toolbar = QToolBar()
         self.import_action = QAction(QIcon("icons/film--plus.png"), "Import")

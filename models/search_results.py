@@ -26,8 +26,8 @@ class SearchResult(SceneModel):
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
 
-    def __init__(self, ui, page):
-        super(SceneModel, self).__init__()
+    def __init__(self, ui, page, _scenes_list_view):
+        super().__init__(ui, page, _scenes_list_view)
         self.table_name = 'scenes'
         self.db_model = QSqlQueryModel()
         self.fields = [ 'scenes.id' ,
@@ -50,8 +50,6 @@ class SearchResult(SceneModel):
         self.count_tpl = f"""SELECT COUNT(scenes.id) FROM scenes 
                                 JOIN video_files ON video_files.id = scenes.video_file_id
                                 WHERE scenes.id IN (%s)"""
-        self.ui = ui
-        self.page = page
         self.time_sum = 0.
         self.timeit_cnt = 0
         self.cpu_threadpool = None

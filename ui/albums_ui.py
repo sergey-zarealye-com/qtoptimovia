@@ -19,7 +19,7 @@ class AlbumsUI(UiBase):
         self.files_list_view = QTableView()
         self.files_list_model = FilesModel(0)
         self.scenes_list_view = QTableView()
-        self.scenes_list_model = SceneModel(self)
+        self.scenes_list_model = SceneModel(self, 0, self.scenes_list_view)
 
         self.albums_toolbar = QToolBar()
         self.add_album_action = QAction(QIcon("icons/plus-button.png"), "Add album")

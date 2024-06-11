@@ -2,10 +2,9 @@ from datetime import timedelta
 
 from PyQt5.QtCore import Qt, QVariant
 from PyQt5.QtGui import QPixmap, QPixmapCache
-from PyQt5.QtSql import QSqlQuery, QSqlTableModel
+from PyQt5.QtSql import QSqlTableModel
 
 from models.base import PixBaseModel
-from models.files import FilesModel
 from models.sql.files import FilesModelSQL
 from models.sql.scenes import SceneModelSQL
 from workers.thumbnails_worker import ThumbnailsWorker
@@ -22,7 +21,7 @@ class SceneModel(PixBaseModel):
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
 
-    def __init__(self, ui):
+    def __init__(self, ui, page, _scenes_list_view):
         super().__init__()
         self.table_name = 'scenes'
         self.fields = SceneModelSQL.setup_db()
@@ -30,8 +29,10 @@ class SceneModel(PixBaseModel):
         self.db_model.setTable(self.table_name)
         self.cpu_threadpool = None
         self.ui = ui
+        self.page = page
         self.time_sum = 0.
         self.timeit_cnt = 0
+        self._scenes_list_view = _scenes_list_view
 
     def data(self, index, role):
         if not index.isValid():
@@ -56,9 +57,10 @@ class SceneModel(PixBaseModel):
         if role == Qt.DecorationRole \
                 and col != duration_col \
                 and col != start_col:
-            visible_row_start = self.ui.scenes_list_view.rowAt(0)
-            visible_row_end = self.ui.scenes_list_view.rowAt(self.ui.scenes_list_view.height())
-            if not self.ui.scenes_list_model.slider_moved and (
+            visible_row_start = self._scenes_list_view.rowAt(0)
+            visible_row_end = self._scenes_list_view.rowAt(self._scenes_list_view.height())
+            if self.page == 4 or \
+                    not self.slider_moved and (
                     visible_row_end <= 0 and  visible_row_start <= row
                     or visible_row_start <= row <= visible_row_end):
                 timestamp = self.db_model.data(self.db_model.index(row, col))

@@ -1,3 +1,5 @@
+from PyQt5.QtWidgets import QHeaderView
+
 from models.scenes import SceneModel
 from models.sql.montage_headers import MontageHeadersModelSQL
 from models.sql.montage_materials import MontageMaterialsModelSQL
@@ -45,7 +47,6 @@ class ExtSearchSlots(SlotsBase):
                                                   imported_at_from, imported_at_to)
         self.ui.search_results_view.clearSelection()
         self.clear_scenes_view()
-        # TODO in search results thumbnails do not lazy-load sometimes, and remain empty rows
         self.ui.search_results_model.layoutChanged.emit()
         self.ui.pager.setText(str(page + 1))
         self.ui.plot_graph.clear()
@@ -115,3 +116,12 @@ class ExtSearchSlots(SlotsBase):
             if montage_header_id is not None:
                 id = MontageMaterialsModelSQL.add_to_montage(montage_header_id, video_file_id)
                 self.ui.to_montage_action.setEnabled(id is None)
+
+    def sr_slider_moved(self, smth):
+        print('move')
+        self.ui.search_results_model.slider_moved = True
+
+    def sr_slider_released(self):
+        print('release')
+        self.ui.search_results_model.slider_moved = False
+        self.ui.search_results_model.layoutChanged.emit()

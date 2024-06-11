@@ -31,9 +31,9 @@ class ExtSearchUI(UiBase):
 
         #Views
         self.search_results_view = QTableView()
-        self.search_results_model = SearchResult(self, 4)
+        self.search_results_model = SearchResult(self, 4, self.search_results_view)
         self.scenes_list_view = QTableView()
-        self.scenes_list_model = SceneModel(self)
+        self.scenes_list_model = SceneModel(self, -1, self.scenes_list_view)
 
         self.search_form_toolbar = QToolBar()
         self.search_action = QAction(QIcon("icons/magnifier-zoom.png"), "Search")
