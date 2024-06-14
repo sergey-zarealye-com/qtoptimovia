@@ -1,11 +1,10 @@
+import pyqtgraph as pg
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
-                             QFormLayout, QLineEdit, QGroupBox, QSizePolicy,
+                             QFormLayout, QLineEdit, QSizePolicy,
                              QDateEdit, QCheckBox, QToolBar, QAction, QTableView, QMenu, QHeaderView)
-from PyQt5.QtCore import QDate, Qt, QSize
-import pyqtgraph as pg
 
-from models.files import FilesModel
 from models.scenes import SceneModel
 from models.search_results import SearchResult
 from models.sql.files import FilesModelSQL
@@ -141,5 +140,3 @@ class ExtSearchUI(UiBase):
 
     def setup_scenes_toolbar(self):
         c_setup_scenes_toolbar(self.scenes_toolbar, self.info_action, self.play_action)
-
-# TODO wrong year in search form

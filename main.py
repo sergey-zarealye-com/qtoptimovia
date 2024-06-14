@@ -185,9 +185,9 @@ class MainWindow(QMainWindow):
         self.ui.pages[1].scenes_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[0].files_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[1].files_list_model.cpu_threadpool = self.cpu_threadpool
-
         self.ui.pages[4].search_results_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[4].scenes_list_model.cpu_threadpool = self.cpu_threadpool
+        self.ui.pages[3].montage_materials_model.cpu_threadpool = self.cpu_threadpool
 
         # Dialog windows
         self.preferences_win = None
