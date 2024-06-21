@@ -62,3 +62,6 @@ class MontageMaterialsModelSQL:
         select_query.addBindValue(video_file_id)
         select_query.exec()
         return select_query.first()
+
+
+

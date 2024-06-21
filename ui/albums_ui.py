@@ -1,7 +1,8 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QTreeView, QSizePolicy, QAbstractItemView, QTableView, \
-    QHeaderView, QToolBar, QAction, QMenu, QScrollArea
+    QToolBar, QAction
+
 from models.albums import AlbumsModel
 from models.files import FilesModel
 from models.scenes import SceneModel

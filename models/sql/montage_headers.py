@@ -54,3 +54,23 @@ class MontageHeadersModelSQL:
             return select_query.value(0)
         else:
             return MontageHeadersModelSQL.insert(dt.datetime.now().isoformat(), "{}", 1)
+
+    @staticmethod
+    def get_videos():
+        select_query = QSqlQuery()
+        select_query.exec("""
+                    SELECT video_files.id, video_files.description, video_files.width, video_files.height from video_files
+                    JOIN montage_materials ON montage_materials.video_file_id=video_files.id
+                    JOIN montage_headers ON montage_headers.id=montage_materials.montage_header_id
+                    WHERE montage_headers.is_current=1 
+                    ORDER BY montage_materials.position, video_files.created_at
+                """)
+        out = []
+        while select_query.next():
+            out.append(dict(
+                video_file_id=select_query.value(0),
+                description=select_query.value(1),
+                width=select_query.value(2),
+                height=select_query.value(3)
+            ))
+        return out
