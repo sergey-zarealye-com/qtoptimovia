@@ -1,18 +1,7 @@
-from datetime import timedelta
+from PyQt5.QtCore import Qt
+from PyQt5.QtSql import QSqlQuery, QSqlQueryModel
 
-from PyQt5.QtCore import Qt, QDir, QAbstractTableModel, QVariant, QByteArray
-from PyQt5.QtSql import QSqlQuery, QSqlTableModel, QSqlQueryModel
-from PyQt5.QtGui import QPixmap, QImage, QPixmapCache, QColor
-
-import numpy as np
-
-import os
-
-from PyQt5.QtWidgets import QMessageBox
-
-from models.files import FilesModel
 from models.scenes import SceneModel
-from workers.thumbnails_worker import ThumbnailsWorker
 
 
 class SearchResult(SceneModel):
@@ -20,8 +9,8 @@ class SearchResult(SceneModel):
         ("thumbnail1", ""),
         ("thumbnail2", ""),
         ("thumbnail3", ""),
-        ("scene_end", "Duration"),
-        ("scene_start", "Timecode")
+        ("_scene_end", "Duration"),
+        ("_scene_start", "Timecode")
     ])
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
@@ -32,11 +21,13 @@ class SearchResult(SceneModel):
         self.db_model = QSqlQueryModel()
         self.fields = [ 'scenes.id' ,
                         'video_file_id',
-                        'scene_start' ,
-                        'scene_end' ,
-                        'thumbnail1',
-                        'thumbnail2',
-                        'thumbnail3',
+                        'scene_num',
+                        '1 AS dummy',
+                        'scene_start AS _scene_start' ,
+                        'scene_end AS _scene_end' ,
+                        '(scene_start * 5 + scene_end) / 6 AS thumbnail1',
+                        '(scene_start + scene_end) / 2 AS thumbnail2',
+                        '(scene_end * 5 + scene_start) / 6 AS thumbnail3',
                         'video_files.created_at',
                         'video_files.imported_at',
                         'video_files.width',
@@ -56,6 +47,20 @@ class SearchResult(SceneModel):
         self.limit = 10
         self.offset = 0
         self.total_results = 0
+        self.view_fields = ['scenes.id',
+                       'video_file_id',
+                       'scene_num',
+                       'dummy',
+                       '_scene_start',
+                       '_scene_end',
+                       'thumbnail1',
+                       'thumbnail2',
+                       'thumbnail3',
+                       'video_files.created_at',
+                       'video_files.imported_at',
+                       'video_files.width',
+                       'video_files.height',
+                       ]
 
     def columnCount(self, index):
         if index.isValid():
@@ -65,8 +70,8 @@ class SearchResult(SceneModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            if self.fields[section] in SearchResult.COLUMNS:
-                return SearchResult.COLUMNS[self.fields[section]]
+            if self.view_fields[section] in SearchResult.COLUMNS:
+                return SearchResult.COLUMNS[self.view_fields[section]]
         return super(SceneModel, self).headerData(section, orientation, role)
 
     def set_results(self, scene_id_list, is_include_horizontal=None, is_include_vertical=None,
