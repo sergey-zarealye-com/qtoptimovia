@@ -7,6 +7,7 @@ from PyQt5.QtSql import QSqlTableModel
 from models.ColoredQFileSystemModel import ColoredQFileSystemModel
 from models.base import PixBaseModel
 from models.sql.files import FilesModelSQL
+from models.sql.scenes import SceneModelSQL
 from workers.thumbnails_worker import ThumbnailsWorker
 
 
@@ -64,7 +65,7 @@ class FilesModel(PixBaseModel):
                         file_status = ColoredQFileSystemModel.get_file_status(fname)
                         if file_status == ColoredQFileSystemModel.STATUS_MISSING:
                             return QPixmap('icons/exclamation.png')
-                    timestamps = FilesModelSQL.get_thumbnail_timestamp(video_file_id, 1)
+                    timestamps = SceneModelSQL.get_thumbnail_timestamp(video_file_id, 1)
                     if len(timestamps):
                         timestamp = timestamps[0]
                         cache_key = f"mini_{video_file_id}_{timestamp:.2f}"

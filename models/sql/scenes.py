@@ -107,3 +107,17 @@ class SceneModelSQL:
                 duration > 1 AND scene_start > 10
             ORDER BY video_file_id, scene_start
         """)
+
+    @staticmethod
+    def get_thumbnail_timestamp(video_file_id: int, limit: int) -> list:
+        select_query = QSqlQuery()
+        select_query.prepare(f"SELECT scene_start, scene_end FROM scenes WHERE video_file_id=? ORDER BY scene_start ASC LIMIT ?")
+        select_query.addBindValue(video_file_id)
+        select_query.addBindValue(limit)
+        select_query.exec()
+        out = []
+        while select_query.next():
+            scene_start = select_query.value(0)
+            scene_end = select_query.value(1)
+            out.append((scene_end - scene_start) / 2)
+        return out

@@ -205,19 +205,6 @@ class FilesModelSQL:
                     return None
 
     @staticmethod
-    def get_thumbnail_timestamp(video_file_id: int, limit: int, field='thumbnail2') -> list:
-            select_query = QSqlQuery()
-            select_query.prepare(f"SELECT {field} FROM scenes WHERE video_file_id=? ORDER BY id ASC LIMIT ?")
-            select_query.addBindValue(video_file_id)
-            select_query.addBindValue(limit)
-            select_query.exec()
-            out = []
-            cnt = 0
-            while select_query.next():
-                    out.append(select_query.value(0))
-            return out
-
-    @staticmethod
     def get_minmax_dates():
             select_query = QSqlQuery()
             q = "SELECT STRFTIME('%Y-%m-%d', MIN(imported_at)), " + \
