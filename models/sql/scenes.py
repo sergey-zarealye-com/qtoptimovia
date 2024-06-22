@@ -121,3 +121,20 @@ class SceneModelSQL:
             scene_end = select_query.value(1)
             out.append((scene_end - scene_start) / 2)
         return out
+
+    @staticmethod
+    def scene_view_query(video_file_id):
+        return f"""
+            SELECT id, video_file_id, scene_num, 
+                    COUNT(id) AS sub_scenes_number,
+                    MIN(scene_start) AS _scene_start,
+                    MAX(scene_end) AS _scene_end,
+                    (MIN(scene_start) * 5 + MAX(scene_end)) / 6 AS thumbnail1, 
+                    (MIN(scene_start) + MAX(scene_end)) / 2 AS thumbnail2, 
+                    (MAX(scene_end) * 5 + MIN(scene_start)) / 6 AS thumbnail3
+            FROM scenes 
+            WHERE video_file_id={video_file_id}
+            GROUP BY video_file_id, scene_num
+            ORDER BY scene_num
+        """
+

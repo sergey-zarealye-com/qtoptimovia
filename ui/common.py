@@ -37,8 +37,7 @@ def setup_files_list_view(view, model):
     view.setItemDelegateForColumn(model.get_progress_section(), proc_delegate)
 
     for i, f in enumerate(model.fields):
-        if f not in FilesModel.COLUMNS:
-            view.setColumnHidden(i, True)
+        view.setColumnHidden(i, f not in FilesModel.COLUMNS)
 
 def setup_scenes_view(view, model):
     view.setModel(model)
@@ -46,17 +45,14 @@ def setup_scenes_view(view, model):
     # QTableView Headers
     horizontal_header = view.horizontalHeader()
     vertical_header = view.verticalHeader()
-    # vertical_header.setSectionResizeMode(QHeaderView.ResizeToContents)
     horizontal_header.setStretchLastSection(True)
-    horizontal_header.swapSections(3,4)
-    horizontal_header.swapSections(4,5)
     horizontal_header.swapSections(5,6)
-    # horizontal_header.hide()
+    horizontal_header.swapSections(6,7)
+    horizontal_header.swapSections(7,8)
     vertical_header.hide()
 
-    for i, f in enumerate(model.fields):
-        if f not in SceneModel.COLUMNS:
-            view.setColumnHidden(i, True)
+    for i, f in enumerate(model.view_fields):
+        view.setColumnHidden(i, f not in SceneModel.COLUMNS)
 
 def c_setup_video_files_toolbar(tb, *actions):
     tb.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)

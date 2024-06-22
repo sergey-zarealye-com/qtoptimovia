@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from PyQt5.QtCore import Qt, QVariant
 from PyQt5.QtGui import QPixmap, QPixmapCache
-from PyQt5.QtSql import QSqlTableModel
+from PyQt5.QtSql import QSqlQueryModel
 
 from models.base import PixBaseModel
 from models.sql.files import FilesModelSQL
@@ -15,8 +15,8 @@ class SceneModel(PixBaseModel):
         ("thumbnail1", ""),
         ("thumbnail2", ""),
         ("thumbnail3", ""),
-        ("scene_end", "Duration"),
-        ("scene_start", "Timecode")
+        ("_scene_end", "Duration"),
+        ("_scene_start", "Timecode")
     ])
     THUMB_HEIGHT = 196
     THUMB_WIDTH = 160
@@ -25,27 +25,32 @@ class SceneModel(PixBaseModel):
         super().__init__()
         self.table_name = 'scenes'
         self.fields = SceneModelSQL.setup_db()
-        self.db_model = QSqlTableModel()
-        self.db_model.setTable(self.table_name)
+        self.db_model = QSqlQueryModel()
+        self.db_model.setQuery(SceneModelSQL.scene_view_query(-1))
         self.cpu_threadpool = None
         self.ui = ui
         self.page = page
         self.time_sum = 0.
         self.timeit_cnt = 0
         self._scenes_list_view = _scenes_list_view
+        self.view_fields = [
+            'id', 'video_file_id', 'scene_num',
+            'sub_scenes_number', '_scene_start', '_scene_end',
+            'thumbnail1', 'thumbnail2', 'thumbnail3'
+        ]
 
     def data(self, index, role):
         if not index.isValid():
             return QVariant()
         row = index.row()
         col= index.column()
-        duration_col = self.fields.index('scene_end')
-        start_col = self.fields.index('scene_start')
+        duration_col = self.view_fields.index('_scene_end')
+        start_col = self.view_fields.index('_scene_start')
         if role == Qt.DisplayRole:
             if col == duration_col:
                 end = self.db_model.data(self.db_model.index(row, col))
                 start = self.db_model.data(self.db_model.index(
-                    row, self.fields.index('scene_start')))
+                    row, self.view_fields.index('_scene_start')))
                 t = end - start + 0.00001 #this is to fix str representation of timedelta when exact number of seconds
                 timecode = str(timedelta(seconds=t))[:-3]
                 return timecode
@@ -84,12 +89,12 @@ class SceneModel(PixBaseModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            if self.fields[section] in SceneModel.COLUMNS:
-                return SceneModel.COLUMNS[self.fields[section]]
+            if self.view_fields[section] in SceneModel.COLUMNS:
+                return SceneModel.COLUMNS[self.view_fields[section]]
         return super().headerData(section, orientation, role)
 
     def get_video_file_id_column(self):
-        return self.fields.index('video_file_id')
+        return self.view_fields.index('video_file_id')
 
     def timeit(self, id, t):
         self.time_sum += t

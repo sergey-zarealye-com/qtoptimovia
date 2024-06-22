@@ -5,13 +5,14 @@ from models.sql.albums import AlbumsModelSQL
 from models.sql.files import FilesModelSQL
 from models.sql.montage_headers import MontageHeadersModelSQL
 from models.sql.montage_materials import MontageMaterialsModelSQL
+from models.sql.scenes import SceneModelSQL
 from ui.windows.choose_album import ChooseAlbumDialog
 
 
 class SlotsBase():
 
     def clear_scenes_view(self):
-        self.update_layout(self.ui.scenes_list_model, set_filter="0")
+        self.update_scenes(self.ui.scenes_list_model, -1)
         self.ui.info_action.setDisabled(True)  # Info tool button
         if hasattr(self.ui, 'to_album_action'):
             self.ui.to_album_action.setDisabled(True)
@@ -24,12 +25,16 @@ class SlotsBase():
         vheader = self.ui.scenes_list_view.verticalHeader()
         vheader.setDefaultSectionSize(thumb_height)
         vheader.sectionResizeMode(QHeaderView.Fixed)
-        self.update_layout(self.ui.scenes_list_model, set_filter=f"video_file_id='{video_file_id}'")
+        self.update_scenes(self.ui.scenes_list_model, video_file_id)
         self.ui.info_action.setEnabled(True)
         if hasattr(self.ui, 'to_album_action'):
             self.ui.to_album_action.setEnabled(True)
         if hasattr(self.ui, 'to_montage_action'):
             self.ui.to_montage_action.setDisabled(MontageMaterialsModelSQL.is_video_in_montage(video_file_id))
+
+    def update_scenes(self, model, video_file_id):
+        model.db_model.setQuery(SceneModelSQL.scene_view_query(video_file_id))
+        model.layoutChanged.emit()
 
     def update_layout(self, model, set_filter=None):
         if set_filter != None:
