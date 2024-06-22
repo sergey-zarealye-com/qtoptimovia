@@ -49,6 +49,7 @@ class VideoImportWorker(QRunnable):
         self.STEP_FRAMES = 8 // 2
         self.MAXFRAME = 100000
         self.MIN_SCENE_SEC = 1.0
+        self.SUB_SCENE_SEC = 1.92
 
         # https://en.wikipedia.org/wiki/Finite_difference_coefficient
         self.FILTR = np.array([35 / 12, -26 / 3, 19 / 2, -14 / 3, 11 / 12])  # forward
@@ -89,21 +90,21 @@ class VideoImportWorker(QRunnable):
 
     def split_by_scenes(self, *args, **kwargs):
         scenes = {}
-        prev_image_features = None
-        mean_image_features = None
-        delta = 0.
         scene_start = 0.
         current_pos = 0.
-        scene_frames_count = 0
+        scene_num = 0
         resp = 0.
         deltas = []
         responces = []
         now_triggered = False
+        scene_features_buffer = []
+        scene_features_timestamps = []
+
         with torch.no_grad():
+          # with open('data/log.txt', 'w') as log:
             for pos_list, buff in self.frame_iterator():
                 for idx in range(len(buff)):
                     current_pos = pos_list[idx]['pos_sec']
-                    image_features = None
                     mbatch = []
                     for t in self.tiling():
                         tile = self.clip_preprocess(Image.fromarray(buff[idx][t[1]:t[3], t[0]:t[2]])).unsqueeze(0).to(self.device)
@@ -113,52 +114,84 @@ class VideoImportWorker(QRunnable):
                     image_features = mbatch_features.sum(axis=0)
                     norm = torch.linalg.vector_norm(image_features) * len(self.tiling())
                     image_features /= norm
-                    if prev_image_features is None:
-                        mean_image_features = image_features.detach().clone()
-                        scene_frames_count = 1
-                    else:
-                        mean_image_features += image_features
-                        scene_frames_count += 1
-                        delta = torch.linalg.vector_norm(prev_image_features - image_features)
-                        deltas.append(delta.cpu())
+                    scene_features_buffer.append(image_features.detach().clone().cpu())
+                    scene_features_timestamps.append(current_pos)
+
+                    if len(scene_features_buffer) >1:
+                        delta = torch.linalg.vector_norm(scene_features_buffer[-2] - scene_features_buffer[-1])
+                        deltas.append(delta)
                         if len(deltas) >= self.NFILTR:
                             resp = np.dot(np.array(deltas[-self.NFILTR:]), self.FILTR)
                             responces.append(abs(resp))
                         if len(responces) >= self.STD_WINDOW:
                             self.THRESHOLD = 3 * np.array(responces).std()
+                        # log.write(f"plot\t{current_pos}\t{current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000}\t{resp}\t{self.THRESHOLD}\n")
+                        phase = current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000
                         if abs(resp) >= self.THRESHOLD \
-                                and not now_triggered\
-                                and current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000 - scene_start >= self.MIN_SCENE_SEC:
-                            scene_end = current_pos - self.STEP_MSEC * (self.NFILTR // 2) / 1000
-                            emb = mean_image_features.cpu().numpy() / scene_frames_count
-                            emb = emb.astype(np.float16)
-                            self.signals.partial_result.emit(self.id,
-                                                             dict(
-                                                                 scene_start=scene_start,
-                                                                 scene_end=scene_end,
-                                                                 scene_embedding=QByteArray(emb.tobytes())
-                                                             )
-                                                             )
+                                and not now_triggered \
+                                and phase - scene_start >= self.MIN_SCENE_SEC:
+                            scene_end = phase
+                            self.emit_scene(scene_features_buffer, scene_features_timestamps, scene_num, scene_start, scene_end)
+                            # log.write(f"scene\t{scene_start}\t{scene_end}\n")
                             scene_start = scene_end
-                            scene_frames_count = 0
-                            mean_image_features *= 0
+                            scene_num += 1
+                            scene_features_buffer = []
+                            scene_features_timestamps = []
                         now_triggered = abs(resp) >= self.THRESHOLD
-                    prev_image_features = image_features.detach().clone()
 
                 pos_sec = pos_list[-1]['pos_sec']
                 progress = min(100., 10 + pos_sec / self.duration * 90)
                 self.signals.progress.emit(self.id, progress)
-            if scene_frames_count > 0:
-                emb = mean_image_features.cpu().numpy() / scene_frames_count
-                emb = emb.astype(np.float16)
-                self.signals.partial_result.emit(self.id,
-                                                 dict(
-                                                     scene_start=scene_start,
-                                                     scene_end=self.duration,
-                                                     scene_embedding=QByteArray(emb.tobytes())
-                                                     )
-                                                 )
+            if len(scene_features_buffer) > 0:
+                self.emit_scene(scene_features_buffer, scene_features_timestamps, scene_num, scene_start, current_pos)
         return scenes
+
+    def emit_scene(self, scene_features_buffer, scene_features_timestamps, scene_num, scene_start, scene_end):
+        scene_features = torch.stack(scene_features_buffer)
+        if scene_end - scene_start <= self.SUB_SCENE_SEC:
+            emb = scene_features.mean(axis=0)
+            emb = emb.numpy().astype(np.float16)
+            self.signals.partial_result.emit(self.id,
+                                             dict(
+                                                 scene_start=scene_start,
+                                                 scene_end=scene_end,
+                                                 scene_embedding=QByteArray(emb.tobytes()),
+                                                 scene_num=scene_num
+                                             )
+                                             )
+        else:
+            sub_scene_start = scene_start
+            sub_idx = 0
+            for idx, ts in enumerate(scene_features_timestamps):
+                if ts - sub_scene_start >= self.SUB_SCENE_SEC:
+                    if scene_end - ts >= self.SUB_SCENE_SEC:
+                        ##emit sub_scene_start, ts; continue
+                        emb = scene_features[sub_idx:idx+1].mean(axis=0)
+                        emb = emb.numpy().astype(np.float16)
+                        self.signals.partial_result.emit(self.id,
+                                                         dict(
+                                                             scene_start=sub_scene_start,
+                                                             scene_end=ts,
+                                                             scene_embedding=QByteArray(emb.tobytes()),
+                                                             scene_num=scene_num
+                                                         )
+                                                         )
+                        sub_scene_start = ts
+                        sub_idx = idx
+                    else:
+                        ## emit sub_scene_start, scene_end; break
+                        emb = scene_features[sub_idx:].mean(axis=0)
+                        emb = emb.numpy().astype(np.float16)
+                        self.signals.partial_result.emit(self.id,
+                                                         dict(
+                                                             scene_start=sub_scene_start,
+                                                             scene_end=scene_end,
+                                                             scene_embedding=QByteArray(emb.tobytes()),
+                                                             scene_num=scene_num
+                                                         )
+                                                         )
+                        return
+
 
         # ==============================================================================
         #     Итератор по фильму позволяет получать кадры, упакованные в мини-батчи.

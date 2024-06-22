@@ -12,11 +12,9 @@ class SceneModelSQL:
             CREATE TABLE IF NOT EXISTS scenes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
                 video_file_id INTEGER NOT NULL,
+                scene_num INTEGER NOT NULL,
                 scene_start FLOAT NOT NULL,
                 scene_end FLOAT NOT NULL,
-                thumbnail1 FLOAT NOT NULL,
-                thumbnail2 FLOAT NOT NULL,
-                thumbnail3 FLOAT NOT NULL,
                 scene_embedding BLOB
             )
             """
@@ -45,43 +43,39 @@ class SceneModelSQL:
             CREATE INDEX IF NOT EXISTS idx_scenes_duration ON scenes(scene_end-scene_start)
             """
         )
+        create_idx_query5 = QSqlQuery()
+        create_idx_query5.exec(
+            f"""
+                    CREATE INDEX IF NOT EXISTS idx_scenes_video_file_id_scene_num ON scenes(video_file_id, scene_num)
+                    """
+        )
         return ['id',
                 'video_file_id',
+                'scene_num',
                 'scene_start',
                 'scene_end',
-                'thumbnail1',
-                'thumbnail2',
-                'thumbnail3',
                 'scene_embedding',
                 ]
 
     @staticmethod
-    def insert(video_file_id, scene_start, scene_end, scene_embedding):
-        duration = scene_end - scene_start
-        thumbnail1 = scene_start + duration / 6
-        thumbnail2 = scene_start + duration / 2
-        thumbnail3 = scene_end - duration / 6
+    def insert(video_file_id, scene_num, scene_start, scene_end, scene_embedding):
         insert_query = QSqlQuery()
         insert_query.prepare(
             """
             INSERT INTO scenes (
                 video_file_id,
+                scene_num,
                 scene_start,
                 scene_end,
-                thumbnail1,
-                thumbnail2,
-                thumbnail3,
                 scene_embedding
             ) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """
         )
         insert_query.addBindValue(video_file_id)
+        insert_query.addBindValue(scene_num)
         insert_query.addBindValue(scene_start)
         insert_query.addBindValue(scene_end)
-        insert_query.addBindValue(thumbnail1)
-        insert_query.addBindValue(thumbnail2)
-        insert_query.addBindValue(thumbnail3)
         insert_query.addBindValue(scene_embedding)
         insert_query.exec()
         return insert_query.lastInsertId()

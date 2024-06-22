@@ -1,78 +1,38 @@
+from matplotlib import pyplot as plt
 
-import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
+x1, x2, resps, thr = [],[],[],[]
+sub_starts, sub_ends = [], []
+scene_starts, scene_ends = [], []
+with open('data/log.txt') as log:
+    for row in log:
+        data = row.split("\t")
+        if data[0] == 'plot':
+            current_pos, scene_end, resp, thresh = data[1:]
+            x1.append(float(current_pos))
+            x2.append(float(scene_end))
+            resps.append(float(resp))
+            thr.append(float(thresh))
+        elif data[0] == 'sub':
+            sub_scene_start, current_pos = data[1:]
+            sub_starts.append(float(sub_scene_start))
+            sub_ends.append(float(current_pos))
+        elif data[0] == 'scene':
+            scene_start, scene_end = data[1:]
+            scene_starts.append(float(scene_start))
+            scene_ends.append(float(scene_end))
 
+plt.figure()
+plt.plot(x1, resps)
+plt.plot(x1, thr)
+for i in range(len(sub_starts)):
+    plt.plot([sub_starts[i], sub_ends[i]], [-0.5, -0.8])
+for i in range(len(scene_starts)):
+    plt.plot([scene_starts[i], scene_ends[i]], [-1.5, -1.8])
 
-class TableModel(QtCore.QAbstractTableModel):
-
-    def __init__(self, data, checked):
-        super(TableModel, self).__init__()
-        self._data = data
-        self._checked = checked
-
-    def data(self, index, role):
-        if role == Qt.DisplayRole:
-            value = self._data[index.row()][index.column()]
-            return str(value)
-
-        if role == Qt.CheckStateRole:
-            checked = self._checked[index.row()][index.column()]
-            return Qt.Checked if checked else Qt.Unchecked
-
-    def setData(self, index, value, role):
-        if role == Qt.CheckStateRole:
-            checked = value == Qt.Checked
-            self._checked[index.row()][index.column()] = checked
-            return True
-
-    def rowCount(self, index):
-        return len(self._data)
-
-    def columnCount(self, index):
-        return len(self._data[0])
-
-    def flags(self, index):
-        return Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsUserCheckable
-
-class MainWindow(QtWidgets.QMainWindow):
-
-    def __init__(self):
-        super().__init__()
-
-
-        self.table = QtWidgets.QTableView()
-
-        data = [
-          [1, 9, 2],
-          [1, 0, -1],
-          [3, 5, 2],
-          [3, 3, 2],
-          [5, 8, 9],
-        ]
-
-        checked = [
-          [True, True, True],
-          [False, False, False],
-          [True, False, False],
-          [True, False, True],
-          [False, True, True],
-        ]
-
-        self.model = TableModel(data, checked)
-        self.table.setModel(self.model)
-
-        self.setCentralWidget(self.table)
-
-
-
-app=QtWidgets.QApplication(sys.argv)
-window=MainWindow()
-window.show()
-app.exec_()
-
-
-
+# plt.scatter(sub_ends, [.1]*len(sub_ends), label='sub_end')
+# plt.scatter(scene_ends, [.2]*len(scene_ends), label='scene_end')
+plt.legend()
+plt.show()
 
 
 
