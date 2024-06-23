@@ -29,9 +29,11 @@ class AlbumsModelSQL:
         create_table_query1.exec(
             f"""
             CREATE TABLE IF NOT EXISTS albums_video_files (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY UNIQUE NOT NULL,
                 video_files_id INT NOT NULL,
-                albums_id INT NOT NULL
+                albums_id INT NOT NULL,
+                FOREIGN KEY(video_files_id) REFERENCES video_files(id)
+                FOREIGN KEY(albums_id) REFERENCES albums(id)
              )
             """
         )

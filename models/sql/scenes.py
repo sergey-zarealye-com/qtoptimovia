@@ -10,12 +10,13 @@ class SceneModelSQL:
         create_table_query.exec(
             f"""
             CREATE TABLE IF NOT EXISTS scenes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY UNIQUE NOT NULL,
                 video_file_id INTEGER NOT NULL,
                 scene_num INTEGER NOT NULL,
                 scene_start FLOAT NOT NULL,
                 scene_end FLOAT NOT NULL,
-                scene_embedding BLOB
+                scene_embedding BLOB,
+                FOREIGN KEY(video_file_id) REFERENCES video_files(id)
             )
             """
         )

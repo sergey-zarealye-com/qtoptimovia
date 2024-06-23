@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (QSizePolicy, QHeaderView, QStyledItemDelegate, QStyleOptionProgressBar, QStyle,
-                             QToolButton, QLabel, QApplication)
+                             QToolButton, QLabel, QApplication, QFormLayout, QWidget)
 
 from models.files import FilesModel
 from models.scenes import SceneModel
@@ -101,3 +101,21 @@ def timecode_to_seconds(tc:str):
     hms = tc[:8].split(':')
     t = float(hms[0]) * 3600 + float(hms[1]) * 60 + float(hms[2])
     return t
+
+def setup_search_form_layout(obj, win):
+    form_layout = QFormLayout()
+    form_layout.addRow(win.tr("Description:"), obj.description)
+    form_layout.addRow(QLabel(win.tr("Filming date")))
+    form_layout.addRow(win.tr("From:"), obj.created_at_from)
+    form_layout.addRow(win.tr("To:"), obj.created_at_to)
+    form_layout.addRow(QLabel(win.tr("Import date")))
+    form_layout.addRow(win.tr("From:"), obj.imported_at_from)
+    form_layout.addRow(win.tr("To:"), obj.imported_at_to)
+    form_layout.addRow(win.tr("Horizontal:"), obj.include_horizontal)
+    form_layout.addRow(win.tr("Vertical:"), obj.include_vertical)
+
+    widget = QWidget()
+    widget.setLayout(form_layout)
+    widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
+    return widget

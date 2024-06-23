@@ -12,7 +12,7 @@ class FilesModelSQL:
         create_table_query.exec(
             f"""
             CREATE TABLE IF NOT EXISTS video_files (
-                id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE NOT NULL,
+                id INTEGER PRIMARY KEY UNIQUE NOT NULL,
                 import_name VARCHAR NOT NULL,
                 import_dir VARCHAR NOT NULL,
                 cache_path VARCHAR,

@@ -87,4 +87,4 @@ class AlbumsUI(UiBase):
     def setup_scenes_toolbar(self):
         c_setup_scenes_toolbar(self.scenes_toolbar, self.info_action, self.play_action)
 
-#TODO when nothing is selected, loads all videos 
+#TODO when nothing is selected, loads all videos when they are importing

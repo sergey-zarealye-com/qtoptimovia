@@ -15,6 +15,7 @@ from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
 from slots.files import FilesSlots
 from slots.files_import import FilesImportSlots
+from slots.montage import MontageSlots
 from ui.albums_ui import AlbumsUI
 from ui.archive_ui import ArchiveUI
 from ui.common import get_vertical_spacer
@@ -131,6 +132,7 @@ class MainWindow(QMainWindow):
         self.files_slots = FilesSlots(self)
         self.albums_slots = AlbumsSlots(self)
         self.import_slots = FilesImportSlots(self)
+        self.montage_slots = MontageSlots(self)
 
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
@@ -176,6 +178,9 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].to_montage_action.triggered.connect(self.search_slots.to_montage)
         self.ui.pages[4].scenes_list_view.verticalScrollBar().sliderMoved.connect(self.search_slots.slider_moved)
         self.ui.pages[4].scenes_list_view.verticalScrollBar().sliderReleased.connect(self.search_slots.slider_released)
+
+        # Montage signals:
+        self.ui.pages[3].buttons.clicked.connect(self.montage_slots.populate_footage)
 
         # Stubs
         self.video_files_in_directory = None
@@ -241,6 +246,7 @@ class MainWindow(QMainWindow):
             index = 2
         elif "montage" in action_name:
             index = 3
+            self.montage_slots.load_video_files_list()
         else:
             index = 4
         self.ui.col1_stack_widget.setCurrentIndex(index)

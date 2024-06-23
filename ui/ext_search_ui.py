@@ -2,13 +2,14 @@ import pyqtgraph as pg
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QLabel,
-                             QFormLayout, QLineEdit, QSizePolicy,
+                             QLineEdit, QSizePolicy,
                              QDateEdit, QCheckBox, QToolBar, QAction, QTableView, QMenu, QHeaderView)
 
 from models.scenes import SceneModel
 from models.search_results import SearchResult
 from models.sql.files import FilesModelSQL
-from ui.common import get_fixed_spacer, get_horizontal_spacer, c_setup_scenes_toolbar, setup_scenes_view
+from ui.common import get_fixed_spacer, get_horizontal_spacer, c_setup_scenes_toolbar, setup_scenes_view, \
+    setup_search_form_layout
 from ui.ui_base import UiBase
 
 
@@ -70,21 +71,7 @@ class ExtSearchUI(UiBase):
         if col == 0:
             self.setup_search_form_toolbar()
             layout.setMenuBar(self.search_form_toolbar)
-            form_layout = QFormLayout()
-            form_layout.addRow(win.tr("Description:"), self.description)
-            form_layout.addRow(QLabel(win.tr("Filming date")))
-            form_layout.addRow(win.tr("From:"), self.created_at_from)
-            form_layout.addRow(win.tr("To:"), self.created_at_to)
-            form_layout.addRow(QLabel(win.tr("Import date")))
-            form_layout.addRow(win.tr("From:"), self.imported_at_from)
-            form_layout.addRow(win.tr("To:"), self.imported_at_to)
-            form_layout.addRow(win.tr("Horizontal:"), self.include_horizontal)
-            form_layout.addRow(win.tr("Vertical:"), self.include_vertical)
-
-            groupBox = QWidget()
-            groupBox.setLayout(form_layout)
-            groupBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-
+            groupBox = setup_search_form_layout(self, win)
             layout.addWidget(groupBox)
 
             self.plot_graph.showGrid(x=True, y=True)

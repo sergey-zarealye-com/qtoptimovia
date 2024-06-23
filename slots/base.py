@@ -30,7 +30,8 @@ class SlotsBase():
         if hasattr(self.ui, 'to_album_action'):
             self.ui.to_album_action.setEnabled(True)
         if hasattr(self.ui, 'to_montage_action'):
-            self.ui.to_montage_action.setDisabled(MontageMaterialsModelSQL.is_video_in_montage(video_file_id))
+            # self.ui.to_montage_action.setDisabled(MontageMaterialsModelSQL.is_video_in_montage(video_file_id))
+            self.ui.to_montage_action.setEnabled(True)
 
     def update_scenes(self, model, video_file_id):
         model.db_model.setQuery(SceneModelSQL.scene_view_query(video_file_id))
@@ -60,10 +61,8 @@ class SlotsBase():
         sel_indexes = self.ui.files_list_view.selectionModel().selectedIndexes()
         if len(sel_indexes):
             video_file_id = self.get_video_file_id(sel_indexes[0])
-            montage_header_id = MontageHeadersModelSQL.get_current()
-            if montage_header_id is not None:
-                id = MontageMaterialsModelSQL.add_to_montage(montage_header_id, video_file_id)
-                self.ui.to_montage_action.setEnabled(id is None)
+            ret = MontageHeadersModelSQL.insert(video_file_id)
+            self.ui.to_montage_action.setEnabled(ret is None)
 
     def slider_moved(self, smth):
         self.ui.scenes_list_model.slider_moved = True

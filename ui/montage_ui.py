@@ -1,12 +1,14 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QAction, QTableView, QToolBar, QHeaderView, QListWidget
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QAction, QTableView, QToolBar, QHeaderView, QListWidget, \
+    QTabWidget, QLineEdit, QCheckBox, QDateEdit, QPlainTextEdit, QGroupBox, QDialogButtonBox
 
 from models.montage_headers import MontageHeadersModel
 from models.montage_materials import MontageMaterialsModel
 from models.scenes import SceneModel
+from models.sql.files import FilesModelSQL
 from models.sql.montage_headers import MontageHeadersModelSQL
-from ui.common import get_fixed_spacer, setup_scenes_view, get_horizontal_spacer
+from ui.common import get_fixed_spacer, setup_scenes_view, get_horizontal_spacer, setup_search_form_layout
 from ui.ui_base import UiBase
 
 
@@ -24,6 +26,24 @@ class MontageUI(UiBase):
         self.montage_params_toolbar = QToolBar()
         self.clear_montage_action = QAction(QIcon("icons/cross-button.png"), "Clear")
 
+        # Plot form fields
+        imported_at_min, imported_at_max, created_at_min, created_at_max = FilesModelSQL.get_minmax_dates()
+        self.description = QPlainTextEdit()
+        self.include_horizontal = QCheckBox()
+        self.include_vertical = QCheckBox()
+        self.include_horizontal.setChecked(True)
+        self.include_vertical.setChecked(True)
+        self.created_at_from = QDateEdit(created_at_min)
+        self.created_at_to = QDateEdit(created_at_max)
+        self.imported_at_from = QDateEdit(imported_at_min)
+        self.imported_at_to = QDateEdit(imported_at_max)
+
+        #Selected form fields
+        self.selected_video_files_list = QListWidget()
+
+        #Footage group buttons
+        self.buttons = QDialogButtonBox(QDialogButtonBox.Apply | QDialogButtonBox.Reset)
+
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
         widget_container = QWidget()
@@ -31,7 +51,7 @@ class MontageUI(UiBase):
         if col == 0:
             self.setup_montage_params_toolbar()
             layout.setMenuBar(self.montage_params_toolbar)
-            self.setup_params_ui()
+            layout.addWidget(self.setup_params_ui(win))
         elif col == 1:
             self.setup_montage_materials_toolbar()
             layout.setMenuBar(self.montage_materials_toolbar)
@@ -40,7 +60,6 @@ class MontageUI(UiBase):
             vheader.setSectionResizeMode(QHeaderView.Fixed)
             vheader.setDefaultSectionSize(SceneModel.THUMB_HEIGHT)
             layout.addWidget(self.montage_materials_view)
-            self.montage_materials_model.set_results()
         elif col == 2:
             layout.addWidget(QLabel('<h3>Storyboard</h3>'))
 
@@ -55,17 +74,55 @@ class MontageUI(UiBase):
         self.montage_materials_toolbar.setMovable(False)
 
     def setup_montage_params_toolbar(self):
-        return
         self.montage_params_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.montage_params_toolbar.addWidget(get_fixed_spacer())
-        self.montage_params_toolbar.addWidget(QLabel('<h3>Montage</h3>'))
-        self.albums_toolbar.addWidget(get_horizontal_spacer())
-        self.albums_toolbar.addAction(self.clear_montage_action)
+        self.montage_params_toolbar.addWidget(QLabel('<h3>Video Editor</h3>'))
+        self.montage_params_toolbar.addWidget(get_horizontal_spacer())
+        self.montage_params_toolbar.addAction(self.clear_montage_action)
         self.montage_params_toolbar.setIconSize(QSize(16, 16))
         self.montage_params_toolbar.setMovable(False)
 
-    def setup_params_ui(self):
-        return
-        videos = MontageHeadersModelSQL.get_videos()
-        self.montage_headers_widget = QListWidget()
-        self.montage_headers_widget.insertItem(0, [o.description for o in videos])
+    def setup_params_ui(self, win):
+        layout = QVBoxLayout()
+
+        ## Footage group box
+        footage_group = QGroupBox("Footage")
+        footage_layout = QVBoxLayout()
+        selected_tab = self.setup_selected_tab(win)
+        plot_tab = setup_search_form_layout(self, win)
+        tabs = QTabWidget()
+        tabs.addTab(selected_tab, 'Selected')
+        tabs.addTab(plot_tab, 'Plot')
+        footage_layout.addWidget(tabs)
+        footage_layout.addWidget(self.buttons)
+
+        footage_group.setLayout(footage_layout)
+
+        ## Cut group box
+        params_group = QGroupBox("Cut")
+        params_layout = QVBoxLayout()
+        params_layout.addWidget(QLabel("Cut parameters go here"))
+        params_group.setLayout(params_layout)
+
+        ## Production group box
+        production_group = QGroupBox("Production")
+        production_layout = QVBoxLayout()
+        production_layout.addWidget(QLabel("Production parameters go here"))
+        production_group.setLayout(production_layout)
+
+        layout.addWidget(footage_group)
+        layout.addWidget(params_group)
+        layout.addWidget(production_group)
+
+        widget = QWidget()
+        widget.setLayout(layout)
+        return widget
+
+    def setup_selected_tab(self, win):
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel('Video files selected for montage'))
+        layout.addWidget(self.selected_video_files_list)
+
+        widget = QWidget()
+        widget.setLayout(layout)
+        return widget
