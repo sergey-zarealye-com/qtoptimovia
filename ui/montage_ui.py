@@ -97,6 +97,7 @@ class MontageUI(UiBase):
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(self.remove_footage_button)
         buttons_layout.addWidget(self.load_footage_button)
+        self.load_footage_button.setDefault(True)
         buttons_layout.insertStretch(1,0)
         buttons_widget = QWidget()
         buttons_widget.setLayout(buttons_layout)

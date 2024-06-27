@@ -1,3 +1,5 @@
+from PyQt5.QtWidgets import QMessageBox
+
 from models.sql.montage_headers import MontageHeadersModelSQL
 from models.sql.montage_materials import MontageMaterialsModelSQL
 from models.sql.scenes import SceneModelSQL
@@ -22,10 +24,19 @@ class MontageSlots(SlotsBase):
         self.ui.montage_materials_model.set_results()
 
     def clear_montage_headers(self):
-        MontageHeadersModelSQL.erase()
-        MontageMaterialsModelSQL.erase()
-        self.ui.montage_materials_model.set_results()
-        self.ui.selected_video_files_list.clear()
+        dlg = QMessageBox(self.window)
+        dlg.setWindowTitle("Please confirm")
+        dlg.setText(f"You are about to erase the list of videos selected for montage.\nAre you sure?")
+        dlg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        dlg.setIcon(QMessageBox.Question)
+        button = dlg.exec()
+
+        if button == QMessageBox.Yes:
+            MontageHeadersModelSQL.erase()
+            MontageMaterialsModelSQL.erase()
+            self.ui.montage_materials_model.set_results()
+            self.ui.selected_video_files_list.clear()
+
 
     def remove_footage(self):
         videos = MontageHeadersModelSQL.get_videos()
