@@ -73,9 +73,32 @@ class MontageMaterialsModelSQL:
             FROM scenes 
             JOIN montage_materials ON montage_materials.scene_id=scenes.id
             {condition}
-            GROUP BY scenes.scene_num
+            GROUP BY video_file_id, scenes.scene_num
             ORDER BY montage_materials.position ASC
             """
+
+    @staticmethod
+    def erase():
+        insert_query = QSqlQuery()
+        insert_query.exec(
+            """
+            DELETE FROM montage_materials WHERE 1
+            """
+        )
+
+    @staticmethod
+    def remove_by(**kwargs):
+        if 'video_files_id' in kwargs:
+            id_list = ','.join([str(i) for i in kwargs['video_files_id']])
+            insert_query = QSqlQuery()
+            insert_query.exec(
+                f"""
+                DELETE FROM montage_headers WHERE scene_id IN (
+                    SELECT scene_id.id from scenes
+                    JOIN video_files ON video_files.id=scenes.video_file_id
+                )
+                """
+            )
 
     # @staticmethod
     # def is_video_in_montage(video_file_id, scene_id=None):

@@ -65,3 +65,14 @@ class MontageHeadersModelSQL:
                 height=select_query.value(3)
             ))
         return out
+
+    @staticmethod
+    def remove_by(**kwargs):
+        if 'video_files_id' in kwargs:
+            id_list = ','.join([str(i) for i in kwargs['video_files_id']])
+            insert_query = QSqlQuery()
+            insert_query.exec(
+                f"""
+                DELETE FROM montage_headers WHERE video_file_id IN ({id_list})
+                """
+            )

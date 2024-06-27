@@ -180,7 +180,9 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].scenes_list_view.verticalScrollBar().sliderReleased.connect(self.search_slots.slider_released)
 
         # Montage signals:
-        self.ui.pages[3].buttons.clicked.connect(self.montage_slots.populate_footage)
+        self.ui.pages[3].clear_montage_action.triggered.connect(self.montage_slots.clear_montage_headers)
+        self.ui.pages[3].load_footage_button.clicked.connect(self.montage_slots.populate_footage)
+        self.ui.pages[3].remove_footage_button.clicked.connect(self.montage_slots.remove_footage)
 
         # Stubs
         self.video_files_in_directory = None

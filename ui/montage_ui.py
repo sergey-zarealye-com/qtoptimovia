@@ -1,7 +1,8 @@
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QAction, QTableView, QToolBar, QHeaderView, QListWidget, \
-    QTabWidget, QLineEdit, QCheckBox, QDateEdit, QPlainTextEdit, QGroupBox, QDialogButtonBox
+    QTabWidget, QLineEdit, QCheckBox, QDateEdit, QPlainTextEdit, QGroupBox, QDialogButtonBox, QPushButton, QHBoxLayout, \
+    QAbstractItemView
 
 from models.montage_headers import MontageHeadersModel
 from models.montage_materials import MontageMaterialsModel
@@ -17,8 +18,6 @@ class MontageUI(UiBase):
     def __init__(self):
         super().__init__()
         self.montage_headers_model = MontageHeadersModel()
-        self.montage_headers_widget = QListWidget()
-
         self.montage_materials_view = QTableView()
         self.montage_materials_model = MontageMaterialsModel(self, 3, self.montage_materials_view)
         self.montage_materials_toolbar = QToolBar()
@@ -42,7 +41,8 @@ class MontageUI(UiBase):
         self.selected_video_files_list = QListWidget()
 
         #Footage group buttons
-        self.buttons = QDialogButtonBox(QDialogButtonBox.Apply | QDialogButtonBox.Reset)
+        self.load_footage_button = QPushButton("Load footage")
+        self.remove_footage_button = QPushButton("Remove")
 
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
@@ -94,7 +94,14 @@ class MontageUI(UiBase):
         tabs.addTab(selected_tab, 'Selected')
         tabs.addTab(plot_tab, 'Plot')
         footage_layout.addWidget(tabs)
-        footage_layout.addWidget(self.buttons)
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(self.remove_footage_button)
+        buttons_layout.addWidget(self.load_footage_button)
+        buttons_layout.insertStretch(1,0)
+        buttons_widget = QWidget()
+        buttons_widget.setLayout(buttons_layout)
+
+        footage_layout.addWidget(buttons_widget)
 
         footage_group.setLayout(footage_layout)
 
@@ -122,7 +129,7 @@ class MontageUI(UiBase):
         layout = QVBoxLayout()
         layout.addWidget(QLabel('Video files selected for montage'))
         layout.addWidget(self.selected_video_files_list)
-
+        self.selected_video_files_list.setSelectionMode(QAbstractItemView.MultiSelection)
         widget = QWidget()
         widget.setLayout(layout)
         return widget
