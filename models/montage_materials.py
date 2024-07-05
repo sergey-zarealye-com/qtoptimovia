@@ -87,6 +87,9 @@ class MontageMaterialsModel(PixBaseModel):
                     worker.signals.finished.connect(self.timeit)
                     self.cpu_threadpool.start(worker)
                 return pix
+        if role == Qt.DecorationRole \
+                and col == start_col:
+            return QPixmap("icons/control.png")
 
     def columnCount(self, index):
         if index.isValid():

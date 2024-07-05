@@ -45,4 +45,6 @@ class MontageSlots(SlotsBase):
         self.load_video_files_list()
         self.populate_footage()
 
+    def toggle_sub_scene(self, index):
+        print(index.row(), 'scene_id', index.model().db_model.data(index.siblingAtColumn(0)))
 

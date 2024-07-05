@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtCore import Qt, QSize, QThreadPool, QTimer
+from PyQt5.QtCore import Qt, QSize, QThreadPool, QTimer, QSettings, QByteArray
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtWidgets import (
@@ -91,12 +91,12 @@ class MainWindowUI:
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
 
-        splitter = QSplitter()
-        splitter.addWidget(self.col1_stack_widget)
-        splitter.addWidget(self.col2_stack_widget)
-        splitter.addWidget(self.col3_stack_widget)
+        self.splitter = QSplitter()
+        self.splitter.addWidget(self.col1_stack_widget)
+        self.splitter.addWidget(self.col2_stack_widget)
+        self.splitter.addWidget(self.col3_stack_widget)
 
-        content_layout.addWidget(splitter)
+        content_layout.addWidget(self.splitter)
         content_widget = QWidget()
         content_widget.setLayout(content_layout)
         self.central_window.setCentralWidget(content_widget)
@@ -183,6 +183,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[3].clear_montage_action.triggered.connect(self.montage_slots.clear_montage_headers)
         self.ui.pages[3].load_footage_button.clicked.connect(self.montage_slots.populate_footage)
         self.ui.pages[3].remove_footage_button.clicked.connect(self.montage_slots.remove_footage)
+        self.ui.pages[3].montage_materials_view.doubleClicked.connect(self.montage_slots.toggle_sub_scene)
 
         # Stubs
         self.video_files_in_directory = None
@@ -200,6 +201,10 @@ class MainWindow(QMainWindow):
         self.preferences_win = None
         self.add_album_dialog = None
         self.to_album_dialog = None
+
+        # Settings
+        self.settings = QSettings("SergeyPo", "QtOptimoviaApp")
+        self.read_settings()
 
     def progress_fn(self, id:int, progress:float):
         FilesModelSQL.update_fields(id, dict(proc_progress=progress))
@@ -261,6 +266,21 @@ class MainWindow(QMainWindow):
             self.preferences_win = PreferencesWindow(self)
         self.preferences_win.montage_albums_list_model.update_layout()
         self.preferences_win.open()
+
+    def write_settings(self):
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
+        self.settings.setValue("splitterState", self.ui.splitter.saveState())
+
+    def read_settings(self):
+        self.restoreGeometry(self.settings.value("geometry", QByteArray()))
+        self.restoreState(self.settings.value("windowState", QByteArray()))
+        self.ui.splitter.restoreState(self.settings.value("splitterState", QByteArray()))
+
+    def closeEvent(self, event):
+        self.write_settings()
+        super().closeEvent(event)
+        event.accept()
 
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
