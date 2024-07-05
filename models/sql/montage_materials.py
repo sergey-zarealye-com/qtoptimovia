@@ -61,7 +61,7 @@ class MontageMaterialsModelSQL:
         upd_query.exec("UPDATE montage_materials SET position=id")
 
     @staticmethod
-    def footage_view_query(condition=''):
+    def footage_view_query_collapsed(condition=''):
         return f"""
             SELECT scenes.id, scenes.video_file_id AS video_file_id, scenes.scene_num AS scene_num,
                     COUNT(scenes.id) AS sub_scenes_number,
@@ -69,7 +69,8 @@ class MontageMaterialsModelSQL:
                     MAX(scene_end) AS _scene_end,
                     (MIN(scene_start) * 5 + MAX(scene_end)) / 6 AS thumbnail1, 
                     (MIN(scene_start) + MAX(scene_end)) / 2 AS thumbnail2, 
-                    (MAX(scene_end) * 5 + MIN(scene_start)) / 6 AS thumbnail3 
+                    (MAX(scene_end) * 5 + MIN(scene_start)) / 6 AS thumbnail3,
+                    montage_materials.position
             FROM scenes 
             JOIN montage_materials ON montage_materials.scene_id=scenes.id
             {condition}
@@ -100,24 +101,70 @@ class MontageMaterialsModelSQL:
                 """
             )
 
-    # @staticmethod
-    # def is_video_in_montage(video_file_id, scene_id=None):
-    #     scene_clause = ''
-    #     if scene_id is not None:
-    #         scene_clause = 'AND scene_id=?'
-    #     q_tpl = f"""
-    #         SELECT id FROM montage_materials
-    #         WHERE video_file_id=?
-    #         {scene_clause}
-    #         LIMIT 1
-    #     """
-    #     select_query = QSqlQuery()
-    #     select_query.prepare(q_tpl)
-    #     select_query.addBindValue(video_file_id)
-    #     if scene_id is not None:
-    #         select_query.addBindValue(scene_id)
-    #     select_query.exec()
-    #     return select_query.first()
+    @staticmethod
+    def footage_view_query_expanded(expanded_scene_num, expanded_scene_file_id,
+                                    expanded_scene_first_position, expanded_scene_last_position):
+        return f"""
+                SELECT scenes.id, scenes.video_file_id AS video_file_id, scenes.scene_num AS scene_num,
+                    COUNT(scenes.id) AS sub_scenes_number,
+                    MIN(scene_start) AS _scene_start,
+                    MAX(scene_end) AS _scene_end,
+                    (MIN(scene_start) * 5 + MAX(scene_end)) / 6 AS thumbnail1, 
+                    (MIN(scene_start) + MAX(scene_end)) / 2 AS thumbnail2, 
+                    (MAX(scene_end) * 5 + MIN(scene_start)) / 6 AS thumbnail3,
+                    montage_materials.position
+                FROM scenes 
+                JOIN montage_materials ON montage_materials.scene_id=scenes.id
+                WHERE montage_materials.position < {expanded_scene_first_position}
+                GROUP BY video_file_id, scenes.scene_num
+                UNION
+                SELECT scenes.id, scenes.video_file_id AS video_file_id, scenes.scene_num AS scene_num,
+                    0 AS sub_scenes_number,
+                    scene_start AS _scene_start,
+                    scene_end AS _scene_end,
+                    (scene_start * 5 + scene_end) / 6 AS thumbnail1, 
+                    (scene_start + scene_end) / 2 AS thumbnail2, 
+                    (scene_end * 5 + scene_start) / 6 AS thumbnail3,
+                    montage_materials.position
+                FROM scenes 
+                JOIN montage_materials ON montage_materials.scene_id=scenes.id
+                WHERE video_file_id={expanded_scene_file_id} AND scenes.scene_num={expanded_scene_num}
+                UNION
+                SELECT scenes.id, scenes.video_file_id AS video_file_id, scenes.scene_num AS scene_num,
+                    COUNT(scenes.id) AS sub_scenes_number,
+                    MIN(scene_start) AS _scene_start,
+                    MAX(scene_end) AS _scene_end,
+                    (MIN(scene_start) * 5 + MAX(scene_end)) / 6 AS thumbnail1, 
+                    (MIN(scene_start) + MAX(scene_end)) / 2 AS thumbnail2, 
+                    (MAX(scene_end) * 5 + MIN(scene_start)) / 6 AS thumbnail3,
+                    montage_materials.position
+                FROM scenes 
+                JOIN montage_materials ON montage_materials.scene_id=scenes.id
+                WHERE montage_materials.position > {expanded_scene_last_position}
+                GROUP BY video_file_id, scenes.scene_num	
+                ORDER BY montage_materials.position ASC
+                """
 
-
-
+    @staticmethod
+    def get_scenes_block(scene_id):
+        select_query = QSqlQuery()
+        select_query.prepare("SELECT video_file_id, scene_num FROM scenes WHERE id=? LIMIT 1")
+        select_query.addBindValue(scene_id)
+        select_query.exec()
+        if select_query.first():
+            video_file_id = select_query.value(0)
+            scene_num = select_query.value(1)
+            select_query1 = QSqlQuery()
+            select_query1.prepare("""
+            SELECT MIN(montage_materials.position), MAX(montage_materials.position)
+            FROM scenes 
+            JOIN montage_materials ON montage_materials.scene_id=scenes.id
+            WHERE scenes.scene_num = ? AND scenes.video_file_id = ?
+            """)
+            select_query1.addBindValue(scene_num)
+            select_query1.addBindValue(video_file_id)
+            select_query1.exec()
+            if select_query1.first():
+                expanded_scene_first_position = select_query1.value(0)
+                expanded_scene_last_position = select_query1.value(1)
+                return scene_num, video_file_id, expanded_scene_first_position, expanded_scene_last_position

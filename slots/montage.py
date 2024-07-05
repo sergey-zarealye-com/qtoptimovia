@@ -46,5 +46,13 @@ class MontageSlots(SlotsBase):
         self.populate_footage()
 
     def toggle_sub_scene(self, index):
-        print(index.row(), 'scene_id', index.model().db_model.data(index.siblingAtColumn(0)))
+        scene_id = index.model().db_model.data(index.siblingAtColumn(0))
+        if index.model().expanded_scene_id is None:
+            index.model().expanded_scene_id = scene_id
+        else:
+            index.model().expanded_scene_id = None
+            index.model().expanded_scene_num, index.model().expanded_scene_file_id, \
+            index.model().expanded_scene_first_position, \
+            index.model().expanded_scene_last_position = None, None, None, None
+        index.model().set_results()
 
