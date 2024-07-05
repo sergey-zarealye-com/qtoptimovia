@@ -31,4 +31,5 @@ class FilesImportSlots(SlotsBase):
         scene_end = obj['scene_end']
         scene_embedding = obj['scene_embedding']
         scene_num = obj['scene_num']
-        scene_id = SceneModelSQL.insert(video_file_id, scene_num, scene_start, scene_end, scene_embedding)
+        aesthetic_score = obj['aesthetic_score']
+        scene_id = SceneModelSQL.insert(video_file_id, scene_num, scene_start, scene_end, scene_embedding, aesthetic_score)

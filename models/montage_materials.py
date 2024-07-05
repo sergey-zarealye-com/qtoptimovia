@@ -5,7 +5,6 @@ from PyQt5.QtGui import QPixmapCache, QPixmap, QColor
 from PyQt5.QtSql import QSqlQueryModel
 
 from models.base import PixBaseModel
-from models.scenes import SceneModel
 from models.sql.files import FilesModelSQL
 from models.sql.montage_materials import MontageMaterialsModelSQL
 from models.sql.scenes import SceneModelSQL
@@ -54,6 +53,7 @@ class MontageMaterialsModel(PixBaseModel):
         sub_scenes_number = self.db_model.data(index.siblingAtColumn(3))
         scene_num = self.db_model.data(index.siblingAtColumn(2))
         position = self.db_model.data(index.siblingAtColumn(9))
+        scene_id = self.db_model.data(index.siblingAtColumn(0))
         if role == Qt.DisplayRole:
             if col == duration_col:
                 end = self.db_model.data(self.db_model.index(row, col))
@@ -61,7 +61,10 @@ class MontageMaterialsModel(PixBaseModel):
                     row, self.view_fields.index('_scene_start')))
                 t = end - start + 0.00001  # this is to fix str representation of timedelta when exact number of seconds
                 timecode = str(timedelta(seconds=t))[:-3]
-                return timecode
+                # return timecode ## TODO
+
+                return "%.3f" % SceneModelSQL.get_score(scene_id)
+
             if col == start_col:
                 start = self.db_model.data(self.db_model.index(row, col))
                 t = start + 0.00001  # this is to fix str representation of timedelta when exact number of seconds
@@ -96,7 +99,6 @@ class MontageMaterialsModel(PixBaseModel):
                 return pix
         if role == Qt.DecorationRole \
                 and col == start_col:
-            print(position, self.expanded_scene_first_position, self.expanded_scene_id)
             if position == self.expanded_scene_first_position and self.expanded_scene_id is not None:
                 return QPixmap("icons/control-270.png")
             if sub_scenes_number > 1:

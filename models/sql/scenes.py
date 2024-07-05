@@ -16,6 +16,7 @@ class SceneModelSQL:
                 scene_start FLOAT NOT NULL,
                 scene_end FLOAT NOT NULL,
                 scene_embedding BLOB,
+                aesthetic_score FLOAT,
                 FOREIGN KEY(video_file_id) REFERENCES video_files(id)
             )
             """
@@ -56,10 +57,11 @@ class SceneModelSQL:
                 'scene_start',
                 'scene_end',
                 'scene_embedding',
+                'aesthetic_score'
                 ]
 
     @staticmethod
-    def insert(video_file_id, scene_num, scene_start, scene_end, scene_embedding):
+    def insert(video_file_id, scene_num, scene_start, scene_end, scene_embedding, aesthetic_score):
         insert_query = QSqlQuery()
         insert_query.prepare(
             """
@@ -68,9 +70,10 @@ class SceneModelSQL:
                 scene_num,
                 scene_start,
                 scene_end,
-                scene_embedding
+                scene_embedding,
+                aesthetic_score
             ) 
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             """
         )
         insert_query.addBindValue(video_file_id)
@@ -78,6 +81,7 @@ class SceneModelSQL:
         insert_query.addBindValue(scene_start)
         insert_query.addBindValue(scene_end)
         insert_query.addBindValue(scene_embedding)
+        insert_query.addBindValue(aesthetic_score)
         insert_query.exec()
         return insert_query.lastInsertId()
 
@@ -139,3 +143,12 @@ class SceneModelSQL:
             ORDER BY scene_num
         """
 
+    @staticmethod
+    def get_score(scene_id):
+        select_query = QSqlQuery()
+        select_query.prepare(f"SELECT aesthetic_score from scenes where id=?")
+        select_query.addBindValue(scene_id)
+        select_query.exec()
+        if select_query.first():
+            aesthetic_score = select_query.value(0)
+            return aesthetic_score

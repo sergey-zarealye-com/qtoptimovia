@@ -62,6 +62,12 @@ class VideoImportWorker(QRunnable):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.clip_model, self.clip_preprocess = clip.load("ViT-B/32", device=self.device)
 
+        positive_prompt, negative_prompt = "a outstanding picture", "a horrible picture"
+        text = clip.tokenize([positive_prompt, negative_prompt]).to(self.device)
+        with torch.no_grad():
+            self.static_aesthetic_text_emb = self.clip_model.encode_text(text)
+            self.static_aesthetic_text_emb = torch.nn.functional.normalize(self.static_aesthetic_text_emb, p=2, dim=1)
+
     def run(self):
         try:
             self.scenes = self.split_by_scenes(*self.args, **self.kwargs)
@@ -99,6 +105,7 @@ class VideoImportWorker(QRunnable):
         now_triggered = False
         scene_features_buffer = []
         scene_features_timestamps = []
+        aesthetic_score_buffer = []
 
         with torch.no_grad():
           # with open('data/log.txt', 'w') as log:
@@ -111,13 +118,17 @@ class VideoImportWorker(QRunnable):
                         mbatch.append(tile)
                     mbatch = torch.cat(mbatch, 0)
                     mbatch_features = self.clip_model.encode_image(mbatch)
+
+                    aesthetic_score_buffer.append(self.eval_aesthetic_score(mbatch_features))
+
                     image_features = mbatch_features.sum(axis=0)
                     norm = torch.linalg.vector_norm(image_features) * len(self.tiling())
                     image_features /= norm
+
                     scene_features_buffer.append(image_features.detach().clone().cpu())
                     scene_features_timestamps.append(current_pos)
 
-                    if len(scene_features_buffer) >1:
+                    if len(scene_features_buffer) > 1:
                         delta = torch.linalg.vector_norm(scene_features_buffer[-2] - scene_features_buffer[-1])
                         deltas.append(delta)
                         if len(deltas) >= self.NFILTR:
@@ -131,32 +142,41 @@ class VideoImportWorker(QRunnable):
                                 and not now_triggered \
                                 and phase - scene_start >= self.MIN_SCENE_SEC:
                             scene_end = phase
-                            self.emit_scene(scene_features_buffer, scene_features_timestamps, scene_num, scene_start, scene_end)
+                            self.emit_scene(scene_features_buffer, scene_features_timestamps,
+                                            scene_num, scene_start, scene_end,
+                                            aesthetic_score_buffer)
                             # log.write(f"scene\t{scene_start}\t{scene_end}\n")
                             scene_start = scene_end
                             scene_num += 1
                             scene_features_buffer = []
                             scene_features_timestamps = []
+                            aesthetic_score_buffer = []
                         now_triggered = abs(resp) >= self.THRESHOLD
 
                 pos_sec = pos_list[-1]['pos_sec']
                 progress = min(100., 10 + pos_sec / self.duration * 90)
                 self.signals.progress.emit(self.id, progress)
             if len(scene_features_buffer) > 0:
-                self.emit_scene(scene_features_buffer, scene_features_timestamps, scene_num, scene_start, current_pos)
+                self.emit_scene(scene_features_buffer, scene_features_timestamps,
+                                scene_num, scene_start, current_pos,
+                                aesthetic_score_buffer)
         return scenes
 
-    def emit_scene(self, scene_features_buffer, scene_features_timestamps, scene_num, scene_start, scene_end):
+    def emit_scene(self, scene_features_buffer, scene_features_timestamps,
+                   scene_num, scene_start, scene_end, aesthetic_score_buffer):
         scene_features = torch.stack(scene_features_buffer)
+        aesthetic_score_buffer = torch.tensor(aesthetic_score_buffer)
         if scene_end - scene_start <= self.SUB_SCENE_SEC:
             emb = scene_features.mean(axis=0)
+            aesthetic_score = aesthetic_score_buffer.mean().item()
             emb = emb.numpy().astype(np.float16)
             self.signals.partial_result.emit(self.id,
                                              dict(
                                                  scene_start=scene_start,
                                                  scene_end=scene_end,
                                                  scene_embedding=QByteArray(emb.tobytes()),
-                                                 scene_num=scene_num
+                                                 scene_num=scene_num,
+                                                 aesthetic_score=aesthetic_score
                                              )
                                              )
         else:
@@ -167,13 +187,15 @@ class VideoImportWorker(QRunnable):
                     if scene_end - ts >= self.SUB_SCENE_SEC:
                         ##emit sub_scene_start, ts; continue
                         emb = scene_features[sub_idx:idx+1].mean(axis=0)
+                        aesthetic_score = aesthetic_score_buffer[sub_idx:idx+1].mean().item()
                         emb = emb.numpy().astype(np.float16)
                         self.signals.partial_result.emit(self.id,
                                                          dict(
                                                              scene_start=sub_scene_start,
                                                              scene_end=ts,
                                                              scene_embedding=QByteArray(emb.tobytes()),
-                                                             scene_num=scene_num
+                                                             scene_num=scene_num,
+                                                             aesthetic_score=aesthetic_score
                                                          )
                                                          )
                         sub_scene_start = ts
@@ -181,17 +203,26 @@ class VideoImportWorker(QRunnable):
                     else:
                         ## emit sub_scene_start, scene_end; break
                         emb = scene_features[sub_idx:].mean(axis=0)
+                        aesthetic_score = aesthetic_score_buffer[sub_idx:].mean().item()
                         emb = emb.numpy().astype(np.float16)
                         self.signals.partial_result.emit(self.id,
                                                          dict(
                                                              scene_start=sub_scene_start,
                                                              scene_end=scene_end,
                                                              scene_embedding=QByteArray(emb.tobytes()),
-                                                             scene_num=scene_num
+                                                             scene_num=scene_num,
+                                                             aesthetic_score=aesthetic_score
                                                          )
                                                          )
                         return
 
+
+    def eval_aesthetic_score(self, emb):
+        # https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2022.976235/full
+        n_emb = torch.nn.functional.normalize(emb, p=2, dim=1)
+        # positive - negative
+        score = (self.static_aesthetic_text_emb[0] * n_emb).sum(dim=1) - (self.static_aesthetic_text_emb[1] * n_emb).sum(dim=1)
+        return score.mean().cpu().item()
 
         # ==============================================================================
         #     Итератор по фильму позволяет получать кадры, упакованные в мини-батчи.
