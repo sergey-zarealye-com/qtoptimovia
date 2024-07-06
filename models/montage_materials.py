@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from PyQt5.QtCore import Qt, QVariant
+from PyQt5.QtCore import Qt, QVariant, QSize
 from PyQt5.QtGui import QPixmapCache, QPixmap, QColor
 from PyQt5.QtSql import QSqlQueryModel
 

@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtCore import Qt, QSize, QThreadPool, QTimer, QSettings, QByteArray
+from PyQt5.QtCore import Qt, QSize, QThreadPool, QSettings, QByteArray
 from PyQt5.QtGui import QIcon, QPixmapCache
 from PyQt5.QtSql import QSqlDatabase
 from PyQt5.QtWidgets import (
@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QMenuBar, QToolButton,
     QSplitter, QStackedWidget, QMessageBox, QProgressBar)
 
-from models.files import FilesModel
 from models.sql.files import FilesModelSQL
 from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
@@ -26,6 +25,8 @@ from ui.windows.preferences import PreferencesWindow
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
 from workers.video_import import VideoImportWorker
+
+from modules.pyqtconfig.pyqtconfig import QSettingsManager
 
 
 class MainWindowUI:
@@ -118,9 +119,7 @@ class MainWindow(QMainWindow):
 
         # Workers
         self.cpu_threadpool = QThreadPool()
-        self.cpu_threadpool.setMaxThreadCount(4)  # 4
         self.gpu_threadpool = QThreadPool()
-        self.gpu_threadpool.setMaxThreadCount(1)  # 1
 
         self.ui = MainWindowUI(self)
 
@@ -137,7 +136,6 @@ class MainWindow(QMainWindow):
         for action in self.ui.actions_sidebar:
             action.triggered.connect(self.change_page)
 
-        # self.ui.tool_btn_settings.clicked.connect(self.rebuild_scenes_index)
         self.ui.tool_btn_settings.clicked.connect(self.show_preferences_win)
 
         # Import tool button
@@ -206,6 +204,15 @@ class MainWindow(QMainWindow):
         self.settings = QSettings("SergeyPo", "QtOptimoviaApp")
         self.read_settings()
 
+        self.managed_settings = QSettingsManager()
+        self.managed_settings.set_defaults(dict(
+            num_cpu_threads='4',
+            num_gpu_threads='1',
+        ))
+
+        self.cpu_threadpool.setMaxThreadCount(int(self.managed_settings.get('num_cpu_threads')))
+        self.gpu_threadpool.setMaxThreadCount(int(self.managed_settings.get('num_gpu_threads')))
+
     def progress_fn(self, id:int, progress:float):
         FilesModelSQL.update_fields(id, dict(proc_progress=progress))
         self.files_slots.update_layout(self.ui.pages[1].files_list_model)
@@ -254,6 +261,7 @@ class MainWindow(QMainWindow):
         elif "montage" in action_name:
             index = 3
             self.montage_slots.load_video_files_list()
+            self.montage_slots.populate_footage()
         else:
             index = 4
         self.ui.col1_stack_widget.setCurrentIndex(index)
@@ -294,6 +302,8 @@ if __name__ == "__main__":
     QPixmapCache.setCacheLimit(20 * 1024)
 
     app = QApplication(sys.argv)
+    app.setOrganizationName("SergeyPo")
+    app.setApplicationName("QtOptimoviaApp")
 
     if sys.platform == 'darwin':
         app.setStyle("Fusion")

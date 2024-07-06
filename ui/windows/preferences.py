@@ -10,7 +10,6 @@ from ui.windows.vertical_tabbar import VerticalTabWidget
 class PreferencesWindow(QDialog):
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.theme_selector = QComboBox()
         self.num_cpu_threads = QLineEdit()
         self.num_gpu_threads = QLineEdit()
         self.reindex_button = QPushButton('Start...')
@@ -44,14 +43,15 @@ class PreferencesWindow(QDialog):
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
 
+        self.main_window.managed_settings.add_handler('num_cpu_threads', self.num_cpu_threads)
+        self.main_window.managed_settings.add_handler('num_gpu_threads', self.num_gpu_threads)
+
     def general_tab(self):
         self.num_cpu_threads.setValidator(QIntValidator(1, QThread.idealThreadCount(), self))
         self.num_gpu_threads.setValidator(QIntValidator(1, 8, self))
-        self.theme_selector.addItems(['Light', 'Dark'])
         form_layout = QFormLayout()
         form_layout.addRow('Threads number', self.num_cpu_threads)
         form_layout.addRow('AI threads number', self.num_gpu_threads)
-        form_layout.addRow('UI theme', self.theme_selector)
         groupBox = QWidget()
         groupBox.setLayout(form_layout)
         groupBox.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)

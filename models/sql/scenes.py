@@ -151,4 +151,6 @@ class SceneModelSQL:
         select_query.exec()
         if select_query.first():
             aesthetic_score = select_query.value(0)
-            return aesthetic_score
+            if type(aesthetic_score) != str:
+                return aesthetic_score
+        return 0.
