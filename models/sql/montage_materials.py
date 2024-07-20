@@ -174,6 +174,7 @@ class MontageMaterialsModelSQL:
         select_query = QSqlQuery()
         select_query.exec("""
         SELECT scenes.id, scenes.video_file_id AS video_file_id, scenes.scene_num AS scene_num,
+            0,
             scene_start AS _scene_start,
             scene_end AS _scene_end,
             (scene_start * 5 + scene_end) / 6 AS thumbnail1, 

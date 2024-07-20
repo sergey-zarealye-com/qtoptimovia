@@ -47,7 +47,7 @@ class StoryboardModel(PixBaseModel):
         if role == Qt.DisplayRole:
             if col == duration_col:
                 end = self.data_model[row][col]
-                start = self.data_model[row][self.view_fields.index('_scene_start')]
+                start = self.data_model[row][start_col]
                 t = end - start + 0.00001  # this is to fix str representation of timedelta when exact number of seconds
                 timecode = str(timedelta(seconds=t))[:-3]
                 return timecode
