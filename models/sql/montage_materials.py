@@ -168,3 +168,24 @@ class MontageMaterialsModelSQL:
                 expanded_scene_first_position = select_query1.value(0)
                 expanded_scene_last_position = select_query1.value(1)
                 return scene_num, video_file_id, expanded_scene_first_position, expanded_scene_last_position
+
+    @staticmethod
+    def as_list():
+        select_query = QSqlQuery()
+        select_query.exec("""
+        SELECT scenes.id, scenes.video_file_id AS video_file_id, scenes.scene_num AS scene_num,
+            scene_start AS _scene_start,
+            scene_end AS _scene_end,
+            (scene_start * 5 + scene_end) / 6 AS thumbnail1, 
+            (scene_start + scene_end) / 2 AS thumbnail2, 
+            (scene_end * 5 + scene_start) / 6 AS thumbnail3,
+            montage_materials.position
+        FROM scenes 
+        JOIN montage_materials ON montage_materials.scene_id=scenes.id
+        ORDER BY montage_materials.position ASC
+        """)
+        out = []
+        while select_query.next():
+            row = [select_query.value(c) for c in range(9)]
+            out.append(row)
+        return out

@@ -2,10 +2,7 @@ from PyQt5.QtWidgets import QMessageBox
 
 from models.sql.montage_headers import MontageHeadersModelSQL
 from models.sql.montage_materials import MontageMaterialsModelSQL
-from models.sql.scenes import SceneModelSQL
 from slots.base import SlotsBase
-from workers.ext_searcher import ExtSearcher
-from workers.sim_search import SimSearcher
 
 
 class MontageSlots(SlotsBase):
@@ -22,6 +19,10 @@ class MontageSlots(SlotsBase):
     def populate_footage(self):
         MontageMaterialsModelSQL.insert_from_montage_headers()
         self.ui.montage_materials_model.set_results()
+
+    def do_cut(self):
+        self.ui.storyboard_model.data_model = MontageMaterialsModelSQL.as_list()
+        self.ui.storyboard_model.set_results()
 
     def clear_montage_headers(self):
         dlg = QMessageBox(self.window)

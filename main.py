@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
     QSplitter, QStackedWidget, QMessageBox, QProgressBar)
 
 from models.sql.files import FilesModelSQL
+from modules.pyqtconfig.pyqtconfig import QSettingsManager
 from slots.albums import AlbumsSlots
 from slots.ext_search import ExtSearchSlots
 from slots.files import FilesSlots
@@ -25,8 +26,6 @@ from ui.windows.preferences import PreferencesWindow
 from workers.metadata_parser import MetadataWorker
 from workers.scene_index_builder import SceneIndexBuilder
 from workers.video_import import VideoImportWorker
-
-from modules.pyqtconfig.pyqtconfig import QSettingsManager
 
 
 class MainWindowUI:
@@ -182,6 +181,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[3].load_footage_button.clicked.connect(self.montage_slots.populate_footage)
         self.ui.pages[3].remove_footage_button.clicked.connect(self.montage_slots.remove_footage)
         self.ui.pages[3].montage_materials_view.doubleClicked.connect(self.montage_slots.toggle_sub_scene)
+        self.ui.pages[3].do_cut_button.clicked.connect(self.montage_slots.do_cut)
 
         # Stubs
         self.video_files_in_directory = None
@@ -194,6 +194,7 @@ class MainWindow(QMainWindow):
         self.ui.pages[4].search_results_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[4].scenes_list_model.cpu_threadpool = self.cpu_threadpool
         self.ui.pages[3].montage_materials_model.cpu_threadpool = self.cpu_threadpool
+        self.ui.pages[3].storyboard_model.cpu_threadpool = self.cpu_threadpool
 
         # Dialog windows
         self.preferences_win = None

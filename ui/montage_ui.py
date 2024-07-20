@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QAction, QTableView, Q
 
 from models.montage_headers import MontageHeadersModel
 from models.montage_materials import MontageMaterialsModel
+from models.montage_storyboard import StoryboardModel
 from models.scenes import SceneModel
 from models.sql.files import FilesModelSQL
 from models.sql.montage_headers import MontageHeadersModelSQL
@@ -24,6 +25,10 @@ class MontageUI(UiBase):
 
         self.montage_params_toolbar = QToolBar()
         self.clear_montage_action = QAction(QIcon("icons/cross-button.png"), "Clear")
+
+        self.storyboard_toolbar = QToolBar()
+        self.storyboard_view = QTableView()
+        self.storyboard_model = StoryboardModel(self, 3, self.storyboard_view)
 
         # Plot form fields
         imported_at_min, imported_at_max, created_at_min, created_at_max = FilesModelSQL.get_minmax_dates()
@@ -44,6 +49,9 @@ class MontageUI(UiBase):
         self.load_footage_button = QPushButton("Load footage")
         self.remove_footage_button = QPushButton("Remove")
 
+        #Montage params buttons
+        self.do_cut_button = QPushButton("Do montage")
+
     def setup_ui(self, win: QWidget, col: int) -> None:
         """Set up ui."""
         widget_container = QWidget()
@@ -61,7 +69,13 @@ class MontageUI(UiBase):
             vheader.setDefaultSectionSize(SceneModel.THUMB_HEIGHT)
             layout.addWidget(self.montage_materials_view)
         elif col == 2:
-            layout.addWidget(QLabel('<h3>Storyboard</h3>'))
+            self.setup_storyboard_toolbar()
+            layout.setMenuBar(self.storyboard_toolbar)
+            setup_scenes_view(self.storyboard_view, self.storyboard_model)
+            vheader = self.storyboard_view.verticalHeader()
+            vheader.setSectionResizeMode(QHeaderView.Fixed)
+            vheader.setDefaultSectionSize(SceneModel.THUMB_HEIGHT)
+            layout.addWidget(self.storyboard_view)
 
         v_main_layout = QVBoxLayout(win)
         v_main_layout.addWidget(widget_container)
@@ -81,6 +95,14 @@ class MontageUI(UiBase):
         self.montage_params_toolbar.addAction(self.clear_montage_action)
         self.montage_params_toolbar.setIconSize(QSize(16, 16))
         self.montage_params_toolbar.setMovable(False)
+
+    def setup_storyboard_toolbar(self):
+        self.storyboard_toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.storyboard_toolbar.addWidget(get_fixed_spacer())
+        self.storyboard_toolbar.addWidget(QLabel('<h3>Storyboard</h3>'))
+        self.storyboard_toolbar.addWidget(get_horizontal_spacer())
+        self.storyboard_toolbar.setIconSize(QSize(16, 16))
+        self.storyboard_toolbar.setMovable(False)
 
     def setup_params_ui(self, win):
         layout = QVBoxLayout()
@@ -109,7 +131,12 @@ class MontageUI(UiBase):
         ## Cut group box
         params_group = QGroupBox("Cut")
         params_layout = QVBoxLayout()
-        params_layout.addWidget(QLabel("Cut parameters go here"))
+        pbuttons_layout = QHBoxLayout()
+        pbuttons_layout.addWidget(self.do_cut_button)
+        pbuttons_layout.insertStretch(1, 0)
+        pbuttons_widget = QWidget()
+        pbuttons_widget.setLayout(pbuttons_layout)
+        params_layout.addWidget(pbuttons_widget)
         params_group.setLayout(params_layout)
 
         ## Production group box
